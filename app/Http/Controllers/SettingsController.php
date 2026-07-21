@@ -78,6 +78,13 @@ class SettingsController extends Controller
                 ['SCH-RULER-30', 'Plastic Ruler 30cm', 'School Supplies', 18.00, 140],
                 ['SCH-GLUESTICK', 'Glue Stick (20g)', 'School Supplies', 30.00, 100],
                 ['SCH-TAPE', 'Scotch Tape 1 inch (Roll)', 'School Supplies', 28.00, 110],
+                ['SCH-SCISSORS', 'Stainless Scissors 6-inch', 'School Supplies', 45.00, 75],
+                ['SCH-COMPASS', 'Mathematical Drawing Compass', 'School Supplies', 60.00, 40],
+                ['SCH-STAPLER', 'Mini Stapler with Staples', 'School Supplies', 75.00, 35],
+                ['SCH-PENCILCASE', 'Plastic Pencil Case Organizer', 'School Supplies', 35.00, 80],
+                ['SCH-CALCULATOR', 'Scientific Calculator 240 Functions', 'School Supplies', 350.00, 25],
+                ['SCH-GEOMETRY', 'Mathematical Geometry Box Set', 'School Supplies', 120.00, 30],
+                ['SCH-MARKER-BLK', 'Permanent Marker Black (Pack of 3)', 'School Supplies', 45.00, 60],
 
                 // --- Fabric ---
                 ['FAB-COTTON', 'Printed Cotton Fabric (Yard)', 'Fabric', 120.00, 40],
@@ -89,6 +96,22 @@ class SettingsController extends Controller
                 ['FAB-VELVET', 'Soft Velvet Fabric (Yard)', 'Fabric', 310.00, 12],
                 ['FAB-GINGHAM', 'Gingham Plaid Fabric (Yard)', 'Fabric', 135.00, 28],
                 ['FAB-LACE', 'Lace Fabric Trim (Per Yard)', 'Fabric', 95.00, 35],
+                ['FAB-POLYESTER', 'Polyester Lining Fabric (Yard)', 'Fabric', 80.00, 60],
+                ['FAB-FLANNEL', 'Soft Cotton Flannel (Yard)', 'Fabric', 150.00, 35],
+                ['FAB-ORGANZA', 'Sheer Organza Fabric (Yard)', 'Fabric', 110.00, 45],
+                ['FAB-CANVAS', 'Heavy Duty Canvas Fabric (Yard)', 'Fabric', 195.00, 20],
+                ['FAB-FLEECE', 'Warm Polar Fleece (Yard)', 'Fabric', 185.00, 15],
+                ['FAB-CORDUROY', 'Premium Corduroy Fabric (Yard)', 'Fabric', 210.00, 25],
+                ['FAB-BROCADE', 'Elegant Brocade Fabric (Yard)', 'Fabric', 280.00, 15],
+
+                // --- General Merchandise ---
+                ['GEN-UMBRELLA', 'Compact Foldable Umbrella', 'General Merchandise', 180.00, 50],
+                ['GEN-BATTERY-AA', 'AA Alkaline Batteries (Pack of 4)', 'General Merchandise', 120.00, 100],
+                ['GEN-MUG-CERAMIC', 'Classic White Ceramic Mug 11oz', 'General Merchandise', 65.00, 60],
+                ['GEN-FLASHLIGHT', 'LED Waterproof Flashlight', 'General Merchandise', 150.00, 30],
+                ['GEN-WALLCLOCK', 'Minimalist Silent Wall Clock', 'General Merchandise', 240.00, 15],
+                ['GEN-LOCK-30', 'Brass Padlock 30mm with 3 Keys', 'General Merchandise', 85.00, 40],
+                ['GEN-EXTENSION', 'Power Extension Strip 4-Outlet (2m)', 'General Merchandise', 195.00, 25],
             ];
 
             foreach ($demoProducts as $product) {

@@ -29,55 +29,61 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val root = FrameLayout(this)
-        webView = WebView(this)
-        offlineView = createOfflineView()
+        try {
+            val root = FrameLayout(this)
+            webView = WebView(this)
+            offlineView = createOfflineView()
 
-        root.addView(webView, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ))
-        root.addView(offlineView, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ))
-        setContentView(root)
+            root.addView(webView, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            ))
+            root.addView(offlineView, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            ))
+            setContentView(root)
 
-        webView.settings.apply {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-            databaseEnabled = true
-            loadsImagesAutomatically = true
-            cacheMode = WebSettings.LOAD_DEFAULT
-            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-            setSupportZoom(false)
-        }
-
-        webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                return handleNavigation(request.url)
+            webView.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                databaseEnabled = true
+                loadsImagesAutomatically = true
+                cacheMode = WebSettings.LOAD_DEFAULT
+                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                setSupportZoom(false)
             }
 
-            override fun onPageFinished(view: WebView, url: String) {
-                offlineView.visibility = View.GONE
-                hideStaffControls(view)
-            }
+            webView.webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                    return handleNavigation(request.url)
+                }
 
-            override fun onReceivedError(
-                view: WebView,
-                request: WebResourceRequest,
-                error: WebResourceError
-            ) {
-                if (request.isForMainFrame) {
-                    offlineView.visibility = View.VISIBLE
+                override fun onPageFinished(view: WebView, url: String) {
+                    offlineView.visibility = View.GONE
+                    hideStaffControls(view)
+                }
+
+                override fun onReceivedError(
+                    view: WebView,
+                    request: WebResourceRequest,
+                    error: WebResourceError
+                ) {
+                    if (request.isForMainFrame) {
+                        offlineView.visibility = View.VISIBLE
+                    }
                 }
             }
-        }
 
-        if (savedInstanceState == null) {
-            webView.loadUrl(customerUrl)
-        } else {
-            webView.restoreState(savedInstanceState)
+            if (savedInstanceState == null) {
+                webView.loadUrl(customerUrl)
+            } else {
+                webView.restoreState(savedInstanceState)
+            }
+        } catch (t: Throwable) {
+            // Show a user-facing message and log the stacktrace so we can debug the crash
+            Toast.makeText(this, "Startup error: ${t.message}", Toast.LENGTH_LONG).show()
+            t.printStackTrace()
         }
     }
 
