@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Mera&apos;s Store</string>
-    <string name="customer_url">http://10.0.2.2:8000/user-app</string>
+    <string name="app_name">Mera\'s Store</string>
+    <string name="customer_url">https://france-capstone.vercel.app/user-app</string>
     <string name="offline_title">Store is unavailable</string>
-    <string name="offline_message">Check your connection and make sure the Laravel website is running.</string>
+    <string name="offline_message">Check your internet connection and try again.</string>
     <string name="retry">Retry</string>
     <string name="staff_portal_blocked">Staff login is not available in the customer app.</string>
 </resources>
