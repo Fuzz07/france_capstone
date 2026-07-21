@@ -1,0 +1,25 @@
+/node_modules
+/public/storage
+/storage/*.key
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+/vendor
+.env
+.env.backup
+.env.production
+composer.phar
+.phpunit.result.cache
+.vscode/
+
+# Mobile App Ignores
+.gradle/
+**/build/
+**/.gradle/
+local.properties
+.navigation/
+.idea/
+*.apk
+*.aar
