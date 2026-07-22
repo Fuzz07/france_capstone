@@ -1,5 +1,19 @@
 <?php
 
+if (!function_exists('clean_env_val')) {
+    function clean_env_val($value) {
+        if (is_string($value)) {
+            // Strip UTF-8 BOM (\ufeff) and control characters
+            $bom = pack('H*', 'EFBBBF');
+            $value = preg_replace("/^$bom/", '', $value);
+            $value = str_replace("\ufeff", '', $value);
+            // Trim quotes and whitespace
+            return trim($value, "\"' \t\n\r\0\x0B");
+        }
+        return $value;
+    }
+}
+
 return [
 
     /*
@@ -13,7 +27,7 @@ return [
     |
     */
 
-    'default' => trim(env('MAIL_MAILER', 'smtp'), '"\''),
+    'default' => clean_env_val(env('MAIL_MAILER', 'smtp')),
 
     /*
     |--------------------------------------------------------------------------
@@ -37,11 +51,11 @@ return [
         'smtp' => [
             'transport' => 'smtp',
             'url' => env('MAIL_URL'),
-            'host' => trim(env('MAIL_HOST', 'smtp.mailgun.org'), '"\''),
-            'port' => trim(env('MAIL_PORT', 587), '"\''),
-            'encryption' => trim(env('MAIL_ENCRYPTION', 'tls'), '"\''),
-            'username' => trim(env('MAIL_USERNAME'), '"\''),
-            'password' => trim(env('MAIL_PASSWORD'), '"\''),
+            'host' => clean_env_val(env('MAIL_HOST', 'smtp.gmail.com')),
+            'port' => clean_env_val(env('MAIL_PORT', 587)),
+            'encryption' => clean_env_val(env('MAIL_ENCRYPTION', 'tls')),
+            'username' => clean_env_val(env('MAIL_USERNAME', 'merasstore@gmail.com')),
+            'password' => clean_env_val(env('MAIL_PASSWORD', 'SROPBDiAJ$')),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
@@ -93,8 +107,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => clean_env_val(env('MAIL_FROM_ADDRESS', 'merasstore@gmail.com')),
+        'name' => clean_env_val(env('MAIL_FROM_NAME', "Mera's Store")),
     ],
 
 ];
