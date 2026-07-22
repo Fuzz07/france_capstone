@@ -159,7 +159,7 @@
                     </div>
                     <div>
                         <div class="contact-label">Business Hours</div>
-                        <div class="contact-value">Mon – Sat, 8:00 AM – 6:00 PM</div>
+                        <div class="contact-value">Sun – Friday, 8:00 AM – 6:00 PM</div>
                     </div>
                 </div>
             </div>
