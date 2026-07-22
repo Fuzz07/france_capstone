@@ -21,6 +21,7 @@ Route::get('/download/mobile-app', function () {
         ->header('Expires', '0');
 })->name('mobile.download');
 Route::post('/inquiries', [InquiryController::class, 'store'])->name('inquiries.store');
+Route::get('/test-mail', [AuthController::class, 'testMail']);
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

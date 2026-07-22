@@ -299,4 +299,17 @@ class AuthController extends Controller
             ])->withInput();
         }
     }
+
+    public function testMail()
+    {
+        try {
+            Mail::raw('Mera\'s Store SMTP connection test was successful!', function ($message) {
+                $message->to('jamesalagban83@gmail.com')
+                        ->subject('Store SMTP Mail Test');
+            });
+            return "<h3>SMTP Connection Success!</h3>The email was successfully sent to jamesalagban83@gmail.com! Your SMTP configurations are 100% correct!";
+        } catch (\Throwable $e) {
+            return "<h3>SMTP Mail Sending Failed!</h3><b>Error Message:</b> " . $e->getMessage() . "<br><br><b>File:</b> " . $e->getFile() . " on line " . $e->getLine() . "<br><br><b>Raw Config loaded:</b><pre>" . json_encode(config('mail'), JSON_PRETTY_PRINT) . "</pre>";
+        }
+    }
 }
