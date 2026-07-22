@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', config('app.name'))</title>
     <link rel="stylesheet" href="{{ request()->getBaseUrl() }}/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 
 <body class="@yield('body_class')">
@@ -100,6 +101,17 @@
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                     <span>Settings</span>
+                </a>
+                <a href="{{ route('users.index') }}"
+                    class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>User Management</span>
                 </a>
             @endif
         </nav>
@@ -217,6 +229,55 @@
             }
         });
     </script>
+
+    @if(auth()->user()->role === 'user')
+        <style>
+            @media (max-width: 767px) {
+                .mobile-topbar, .app-sidebar, .sidebar-overlay {
+                    display: none !important;
+                }
+                .app-wrapper {
+                    padding-top: 0 !important;
+                    padding-bottom: 75px !important;
+                }
+            }
+        </style>
+
+        @php
+            $showWebBottomNav = !session('is_mobile_app');
+        @endphp
+
+        @if($showWebBottomNav)
+            <!-- Bottom Navigation Bar for Mobile -->
+            <div class="mobile-bottom-nav">
+                <a href="{{ route('home') }}#home" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-house-door"></i></span>
+                    <span class="nav-label">Home</span>
+                </a>
+                <a href="{{ route('home') }}#products" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-grid"></i></span>
+                    <span class="nav-label">Products</span>
+                </a>
+                <a href="{{ route('home') }}#inquire" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-envelope"></i></span>
+                    <span class="nav-label">Inquiry</span>
+                </a>
+                <a href="{{ route('chat.index') }}" class="mobile-nav-item active">
+                    <span class="nav-icon"><i class="bi bi-chat-dots"></i></span>
+                    <span class="nav-label">Chat</span>
+                </a>
+                <a href="{{ route('profile.index') }}" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-person"></i></span>
+                    <span class="nav-label">Profile</span>
+                </a>
+                <a href="{{ route('profile.notifications') }}" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-bell"></i></span>
+                    <span class="nav-label">Alerts</span>
+                </a>
+            </div>
+        @endif
+    @endif
+
     @stack('scripts')
 </body>
 

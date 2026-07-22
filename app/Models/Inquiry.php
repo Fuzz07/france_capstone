@@ -11,6 +11,7 @@ class Inquiry extends Model
         'customer_email',
         'subject',
         'message',
+        'fcm_token',
         'status',
         'response',
         'responded_at',

@@ -22,4 +22,8 @@ local.properties
 .navigation/
 .idea/
 *.apk
+!public/downloads/meras-user-app.apk
 *.aar
+
+.vercel
+.env*

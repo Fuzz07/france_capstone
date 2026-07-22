@@ -7,6 +7,7 @@
     <!-- CSS Stylesheets -->
     <link rel="stylesheet" href="{{ request()->getBaseUrl() }}/css/style.css">
     <link rel="stylesheet" href="{{ request()->getBaseUrl() }}/css/landing.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 <body>
     <header class="guest-header">
@@ -18,21 +19,14 @@
             <div class="guest-links">
                 <a href="{{ route('home') }}#products" class="guest-link">Browse</a>
                 <a href="{{ route('home') }}#inquire" class="guest-link">Contact</a>
-                @empty($hideAppDownload)
-                    <a href="{{ route('mobile.download') }}" class="guest-link btn-app-download" download>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
-                            aria-hidden="true">
-                            <path d="M12 3v12"></path>
-                            <path d="m7 10 5 5 5-5"></path>
-                            <path d="M5 21h14"></path>
-                        </svg>
-                        <span>Download App</span>
-                    </a>
-                @endempty
-                @empty($hideStaffLinks)
-                    <a href="{{ route('login') }}" class="guest-link btn-guest-login">Staff Login</a>
-                @endempty
+                @if(Auth::check())
+                    <a href="{{ route('profile.index') }}" class="guest-link" style="font-weight: bold; color: #4f46e5;">👤 My Account</a>
+                    <a href="{{ route('profile.notifications') }}" class="guest-link">🔔 Alerts</a>
+                    <a href="{{ route('logout') }}" class="guest-link" style="color: #ef4444;">Logout</a>
+                @else
+                    <a href="{{ route('login') }}" class="guest-link btn-guest-login-outline" style="font-weight: bold; color: #4f46e5 !important; border: 1px solid #4f46e5; padding: 6px 14px; border-radius: 6px; margin-right: 4px;">🔑 Log In</a>
+                    <a href="{{ route('register') }}" class="guest-link btn-guest-login" style="background-color: #4f46e5; color: #ffffff !important; padding: 6px 14px; border-radius: 6px;">Register</a>
+                @endif
             </div>
         </div>
     </header>
@@ -69,6 +63,75 @@
             <p>Stall No. 18, Bantayan Public Market, Suba, Bantayan, Cebu 6052</p>
         </div>
     </footer>
+
+    <script>
+        window.isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUrl = window.location.href;
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                const href = item.getAttribute('href');
+                if (href) {
+                    if (currentUrl.includes('/chat') && href.includes('/chat')) {
+                        item.classList.add('active');
+                    } else if (currentUrl.includes('/profile') && href.includes('/profile')) {
+                        item.classList.add('active');
+                    } else if (currentUrl.includes('/notifications') && href.includes('/notifications')) {
+                        item.classList.add('active');
+                    } else if (currentUrl.includes('/login') && href.includes('/login')) {
+                        item.classList.add('active');
+                    } else if (currentUrl.includes('/register') && href.includes('/register')) {
+                        item.classList.add('active');
+                    }
+                }
+            });
+        });
+    </script>
+    
+    @php
+        $showWebBottomNav = !session('is_mobile_app');
+    @endphp
+
+    @if($showWebBottomNav)
+        <!-- Bottom Navigation Bar for Mobile -->
+        <div class="mobile-bottom-nav">
+            <a href="{{ route('home') }}#home" class="mobile-nav-item">
+                <span class="nav-icon"><i class="bi bi-house-door"></i></span>
+                <span class="nav-label">Home</span>
+            </a>
+            <a href="{{ route('home') }}#products" class="mobile-nav-item">
+                <span class="nav-icon"><i class="bi bi-grid"></i></span>
+                <span class="nav-label">Products</span>
+            </a>
+            <a href="{{ route('home') }}#inquire" class="mobile-nav-item">
+                <span class="nav-icon"><i class="bi bi-envelope"></i></span>
+                <span class="nav-label">Inquiry</span>
+            </a>
+            @if(Auth::check())
+                <a href="{{ route('chat.index') }}" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-chat-dots"></i></span>
+                    <span class="nav-label">Chat</span>
+                </a>
+                <a href="{{ route('profile.index') }}" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-person"></i></span>
+                    <span class="nav-label">Profile</span>
+                </a>
+                <a href="{{ route('profile.notifications') }}" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-bell"></i></span>
+                    <span class="nav-label">Alerts</span>
+                </a>
+            @else
+                <a href="{{ route('login') }}" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-box-arrow-in-right"></i></span>
+                    <span class="nav-label">Sign In</span>
+                </a>
+                <a href="{{ route('register') }}" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-person-plus"></i></span>
+                    <span class="nav-label">Register</span>
+                </a>
+            @endif
+        </div>
+    @endif
 
     @stack('scripts')
 </body>

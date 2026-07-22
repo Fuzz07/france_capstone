@@ -15,18 +15,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/user-app', [HomeController::class, 'mobile'])->name('mobile.home');
 Route::get('/download/mobile-app', function () {
-    $apkPath = public_path('downloads/meras-user-app.apk');
-
-    if (! file_exists($apkPath)) {
-        return redirect()
-            ->route('home')
-            ->with('notice', 'The Android app download is not available yet. Please build the mobile app first.')
-            ->with('noticeType', 'warning');
-    }
-
-    return response()->download($apkPath, 'meras-user-app.apk', [
-        'Content-Type' => 'application/vnd.android.package-archive',
-    ]);
+    return redirect()->to(asset('downloads/meras-user-app.apk?v=' . time()))
+        ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0');
 })->name('mobile.download');
 Route::post('/inquiries', [InquiryController::class, 'store'])->name('inquiries.store');
 
@@ -35,6 +27,13 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/social-login', [AuthController::class, 'socialLogin'])->name('social.login');
+
+    // Password Reset Routes
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/reset-password', [AuthController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
@@ -54,7 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/inquiries', [InquiryController::class, 'index'])->name('inquiries.index');
     Route::match(['post', 'patch'], '/inquiries/{inquiry}/toggle', [InquiryController::class, 'toggle'])->name('inquiries.toggle');
     Route::post('/inquiries/{inquiry}/respond', [InquiryController::class, 'respond'])->name('inquiries.respond');
-    Route::delete('/inquiries/{inquiry}', [InquiryController::class, 'destroy'])->name('inquiries.destroy');
+    Route::delete('/inquiries/{inquiry}', [InquiryController::class, 'destroy'])->name('inquiries.destroy');    
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
@@ -65,6 +64,39 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/export', [SettingsController::class, 'export'])->name('settings.export');
     Route::post('/settings/action', [SettingsController::class, 'action'])->name('settings.action');
+
+    Route::get('/users', [SettingsController::class, 'usersIndex'])->name('users.index');
+    Route::post('/users', [SettingsController::class, 'usersStore'])->name('users.store');
+    Route::match(['post', 'patch'], '/users/{user}/role', [SettingsController::class, 'usersUpdateRole'])->name('users.role');
+    Route::delete('/users/{user}', [SettingsController::class, 'usersDestroy'])->name('users.destroy');
+
+    Route::get('/profile', [InquiryController::class, 'profile'])->name('profile.index');
+    Route::get('/notifications', [InquiryController::class, 'notifications'])->name('profile.notifications');
+
+    Route::get('/run-migrations', function () {
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+        try {
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            return "Migrations run successfully! Output: <pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
+        } catch (\Exception $e) {
+            return "Migration failed: " . $e->getMessage();
+        }
+    });
+
+    Route::get('/get-error-log', function () {
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+        $logPath = storage_path('logs/laravel.log');
+        if (file_exists($logPath)) {
+            $lines = file($logPath);
+            $lastLines = array_slice($lines, -150);
+            return "<pre>" . implode("", $lastLines) . "</pre>";
+        }
+        return "Log file not found.";
+    });
 
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 });

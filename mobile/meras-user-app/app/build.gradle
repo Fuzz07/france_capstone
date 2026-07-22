@@ -1,14 +1,9 @@
 plugins {
-    id 'com.android.application' version '9.2.0'
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
 }
 
 android {
-    buildFeatures {
-        compose true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.0'
-    }
     namespace 'com.meras.userapp'
     compileSdk 34
 
@@ -26,4 +21,9 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+}
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.1.2')
+    implementation 'com.google.firebase:firebase-messaging-ktx'
 }
