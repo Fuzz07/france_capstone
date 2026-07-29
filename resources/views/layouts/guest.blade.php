@@ -22,7 +22,7 @@
                 @if(Auth::check())
                     <a href="{{ route('profile.index') }}" class="guest-link" style="font-weight: bold; color: #4f46e5;">👤 My Account</a>
                     <a href="{{ route('profile.notifications') }}" class="guest-link">🔔 Alerts</a>
-                    <a href="{{ route('logout') }}" class="guest-link" style="color: #ef4444;">Logout</a>
+                    <a href="{{ route('logout') }}" data-logout-confirm class="guest-link" style="color: #ef4444;">Logout</a>
                 @else
                     <a href="{{ route('login') }}" class="guest-link btn-guest-login-outline" style="font-weight: bold; color: #4f46e5 !important; border: 1px solid #4f46e5; padding: 6px 14px; border-radius: 6px; margin-right: 4px;">🔑 Log In</a>
                     <a href="{{ route('register') }}" class="guest-link btn-guest-login" style="background-color: #4f46e5; color: #ffffff !important; padding: 6px 14px; border-radius: 6px;">Register</a>
@@ -131,6 +131,70 @@
                 </a>
             @endif
         </div>
+    @endif
+
+    @if(Auth::check())
+        <div class="logout-confirm-overlay" id="logoutConfirmModal" aria-hidden="true">
+            <div class="logout-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle"
+                aria-describedby="logoutConfirmText">
+                <div class="logout-confirm-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v10"></path>
+                        <path d="M18.4 6.6a9 9 0 1 1-12.8 0"></path>
+                    </svg>
+                </div>
+                <div class="logout-confirm-copy">
+                    <h3 id="logoutConfirmTitle">Sign out of {{ config('app.name') }}?</h3>
+                    <p id="logoutConfirmText">Your current session will end and you will return to the login screen.</p>
+                </div>
+                <div class="logout-confirm-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelLogoutBtn">Stay Signed In</button>
+                    <a href="{{ route('logout') }}" class="btn btn-danger" id="confirmLogoutBtn">Log Out</a>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const logoutConfirmModal = document.getElementById('logoutConfirmModal');
+                const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+                const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+                document.addEventListener('click', function (event) {
+                    const logoutLink = event.target.closest('[data-logout-confirm]');
+                    if (!logoutLink) return;
+                    event.preventDefault();
+                    confirmLogoutBtn.href = logoutLink.href;
+                    logoutConfirmModal.classList.add('open');
+                    logoutConfirmModal.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('logout-modal-open');
+                    setTimeout(() => cancelLogoutBtn.focus(), 80);
+                });
+
+                cancelLogoutBtn.addEventListener('click', function () {
+                    logoutConfirmModal.classList.remove('open');
+                    logoutConfirmModal.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('logout-modal-open');
+                });
+
+                logoutConfirmModal.addEventListener('click', function (event) {
+                    if (event.target === logoutConfirmModal) {
+                        logoutConfirmModal.classList.remove('open');
+                        logoutConfirmModal.setAttribute('aria-hidden', 'true');
+                        document.body.classList.remove('logout-modal-open');
+                    }
+                });
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape' && logoutConfirmModal.classList.contains('open')) {
+                        logoutConfirmModal.classList.remove('open');
+                        logoutConfirmModal.setAttribute('aria-hidden', 'true');
+                        document.body.classList.remove('logout-modal-open');
+                    }
+                });
+            });
+        </script>
     @endif
 
     @stack('scripts')

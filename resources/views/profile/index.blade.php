@@ -11,7 +11,7 @@
                 <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #0f172a; letter-spacing: -0.3px;">👤 Customer Account</h1>
                 <p style="margin: 4px 0 0 0; font-size: 13.5px; color: #64748b;">Manage your details and view inquiries</p>
             </div>
-            <a href="{{ route('logout') }}" style="background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 8px 18px; border-radius: 8px; font-size: 13.5px; font-weight: bold; transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);">
+            <a href="{{ route('logout') }}" data-logout-confirm style="background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 8px 18px; border-radius: 8px; font-size: 13.5px; font-weight: bold; transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);">
                 🚪 Logout
             </a>
         </div>
