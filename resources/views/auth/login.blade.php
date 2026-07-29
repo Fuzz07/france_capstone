@@ -113,7 +113,7 @@
 
         .social-buttons {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 12px;
             margin-bottom: 8px;
         }
@@ -142,18 +142,6 @@
 
         .btn-google {
             color: #1e293b;
-        }
-
-        .btn-facebook {
-            background-color: #1877F2;
-            border-color: #1877F2;
-            color: #ffffff;
-        }
-
-        .btn-facebook:hover {
-            background-color: #165cc5;
-            border-color: #165cc5;
-            color: #ffffff;
         }
 
         /* Simulated Consent Dialog Overlay */
@@ -399,12 +387,6 @@
                     Google
                 </button>
             </div>
-            <button type="button" class="btn-social btn-facebook" style="width: 100%;" onclick="openSocialConsent('facebook')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-                Facebook
-            </button>
         </div>
 
         <div class="auth-footer" style="margin-top: 18px;">
@@ -509,10 +491,6 @@
             { name: "Dave Customer", email: "dave.customer@gmail.com", initial: "D" }
         ];
 
-        const facebookAccounts = [
-            { name: "France Capstone (Facebook)", email: "france.capstone.fb@gmail.com", initial: "F" }
-        ];
-
         function openSocialConsent(provider) {
             currentProvider = provider;
             
@@ -556,24 +534,6 @@
                             <div class="social-avatar">${acc.initial}</div>
                             <div class="social-info">
                                 <span class="social-name">${acc.name}</span>
-                                <span class="social-email">${acc.email}</span>
-                            </div>
-                        </button>
-                    `;
-                });
-                list.innerHTML = html;
-            } else {
-                title.textContent = "Continue with Facebook";
-                desc.textContent = "Mera's Merchandise Store will receive your name and email address.";
-                logo.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
-                
-                let html = '';
-                facebookAccounts.forEach(acc => {
-                    html += `
-                        <button class="social-acc-item" onclick="selectSocialAccount('${acc.name}', '${acc.email}')">
-                            <div class="social-avatar social-avatar-fb">${acc.initial}</div>
-                            <div class="social-info">
-                                <span class="social-name">Continue as ${acc.name.split(' ')[0]}</span>
                                 <span class="social-email">${acc.email}</span>
                             </div>
                         </button>
@@ -625,7 +585,7 @@
 
         function authenticateSocial(name, email) {
             // Show premium overlay loader
-            loadingTitle.textContent = "Connecting via " + (currentProvider === 'google' ? 'Google' : 'Facebook');
+            loadingTitle.textContent = "Connecting via Google";
             loadingSub.textContent = "Establishing secure single sign-on connection...";
             loginLoadingOverlay.classList.add('active');
 
