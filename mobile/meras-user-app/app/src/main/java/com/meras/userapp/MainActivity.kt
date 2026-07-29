@@ -333,7 +333,7 @@ class MainActivity : Activity() {
         val targetUrl = when (tabId) {
             "home" -> getFinalUrlWithToken(customerUrl)
             "products" -> getFinalUrlWithToken(customerUrl) + "#products"
-            "inquiry" -> getFinalUrlWithToken(customerUrl) + "#inquiries"
+            "inquiry" -> getFinalUrlWithToken(customerUrl) + "#inquire"
             "profile" -> getFinalUrlWithToken("$rootBaseUrl/profile")
             "alerts" -> getFinalUrlWithToken("$rootBaseUrl/notifications")
             else -> customerUrl
@@ -349,7 +349,7 @@ class MainActivity : Activity() {
             url.contains("/profile") -> "profile"
             url.contains("/notifications") -> "alerts"
             url.contains("#products") -> "products"
-            url.contains("#inquiries") -> "inquiry"
+            url.contains("#inquire") -> "inquiry"
             else -> "home"
         }
 
