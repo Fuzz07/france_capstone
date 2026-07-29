@@ -30,6 +30,7 @@ class MainActivity : Activity() {
     private lateinit var webView: WebView
     private lateinit var offlineView: View
     private lateinit var bottomNav: LinearLayout
+    private lateinit var fabChatbot: View
     private val customerUrl: String by lazy { getString(R.string.customer_url) }
     private var fcmToken: String? = null
     
@@ -70,6 +71,45 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             ))
+
+            // Floating Chatbot Button (FAB)
+            fabChatbot = FrameLayout(this).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    dpToPx(56),
+                    dpToPx(56)
+                ).apply {
+                    gravity = Gravity.BOTTOM or Gravity.END
+                    setMargins(0, 0, dpToPx(16), dpToPx(16))
+                }
+                
+                // Indigo circular background
+                val shape = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(Color.parseColor("#4f46e5"))
+                }
+                background = shape
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    elevation = dpToPx(6).toFloat()
+                }
+                visibility = View.GONE // Initially hidden, shown upon login check
+                
+                addView(TextView(this@MainActivity).apply {
+                    text = "💬" // Chatbot bubble icon
+                    textSize = 24f
+                    gravity = Gravity.CENTER
+                    layoutParams = FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                })
+
+                setOnClickListener {
+                    val rootBaseUrl = customerUrl.substringBefore("/user-app").substringBefore("?")
+                    webView.loadUrl(getFinalUrlWithToken("$rootBaseUrl/chat"))
+                }
+            }
+
+            contentFrame.addView(fabChatbot)
 
             // Bottom Navigation Bar
             bottomNav = createBottomNavigationBar()
@@ -124,8 +164,15 @@ class MainActivity : Activity() {
                         val isLoggedIn = cleanValue == "true"
                         if (isLoggedIn) {
                             bottomNav.visibility = View.VISIBLE
+                            // Hide the chatbot FAB if they are already on the chat page
+                            if (url.contains("/chat")) {
+                                fabChatbot.visibility = View.GONE
+                            } else {
+                                fabChatbot.visibility = View.VISIBLE
+                            }
                         } else {
                             bottomNav.visibility = View.GONE
+                            fabChatbot.visibility = View.GONE
                         }
                     }
 
@@ -230,7 +277,6 @@ class MainActivity : Activity() {
             TabItem("🏠", "Home", "home"),
             TabItem("🛍️", "Products", "products"),
             TabItem("✉️", "Inquiry", "inquiry"),
-            TabItem("💬", "Chat", "chat"),
             TabItem("👤", "Profile", "profile"),
             TabItem("🔔", "Alerts", "alerts")
         )
@@ -260,13 +306,13 @@ class MainActivity : Activity() {
 
             val iconView = TextView(this).apply {
                 text = tab.icon
-                textSize = 17f
+                textSize = 21f // Slightly bigger for better UI
                 gravity = Gravity.CENTER
             }
 
             val titleView = TextView(this).apply {
                 text = tab.title
-                textSize = 10f
+                textSize = 11f // Slightly bigger for better UI
                 setTextColor(Color.parseColor("#64748b"))
                 gravity = Gravity.CENTER
                 setPadding(0, dpToPx(2), 0, 0)
@@ -288,7 +334,6 @@ class MainActivity : Activity() {
             "home" -> getFinalUrlWithToken(customerUrl)
             "products" -> getFinalUrlWithToken(customerUrl) + "#products"
             "inquiry" -> getFinalUrlWithToken(customerUrl) + "#inquiries"
-            "chat" -> getFinalUrlWithToken("$rootBaseUrl/chat")
             "profile" -> getFinalUrlWithToken("$rootBaseUrl/profile")
             "alerts" -> getFinalUrlWithToken("$rootBaseUrl/notifications")
             else -> customerUrl
@@ -303,13 +348,12 @@ class MainActivity : Activity() {
         val activeTabId = when {
             url.contains("/profile") -> "profile"
             url.contains("/notifications") -> "alerts"
-            url.contains("/chat") -> "chat"
             url.contains("#products") -> "products"
             url.contains("#inquiries") -> "inquiry"
             else -> "home"
         }
 
-        val tabs = listOf("home", "products", "inquiry", "chat", "profile", "alerts")
+        val tabs = listOf("home", "products", "inquiry", "profile", "alerts")
         val activeIndex = tabs.indexOf(activeTabId)
 
         for (i in tabViews.indices) {
