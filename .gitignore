@@ -22,7 +22,7 @@ local.properties
 .navigation/
 .idea/
 *.apk
-!public/downloads/meras-user-app.apk
+!public/downloads/meras-user-app-v2.apk
 *.aar
 
 .vercel

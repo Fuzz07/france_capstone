@@ -20,4 +20,4 @@ After building, copy:
 
 to:
 
-`../../public/downloads/meras-user-app.apk`
+`../../public/downloads/meras-user-app-v2.apk`

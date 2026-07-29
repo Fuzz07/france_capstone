@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/user-app', [HomeController::class, 'mobile'])->name('mobile.home');
 Route::get('/download/mobile-app', function () {
-    return redirect()->to(asset('downloads/meras-user-app.apk?v=' . time()))
+    return redirect()->to(asset('downloads/meras-user-app-v2.apk?v=' . time()))
         ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
         ->header('Pragma', 'no-cache')
         ->header('Expires', '0');
