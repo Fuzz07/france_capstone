@@ -259,10 +259,6 @@
                 <span class="nav-icon"><i class="bi bi-envelope"></i></span>
                 <span class="nav-label">Inquiry</span>
             </a>
-            <a href="{{ route('chat.index') }}" class="mobile-nav-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
-                <span class="nav-icon"><i class="bi bi-chat-dots-fill"></i></span>
-                <span class="nav-label">Chat</span>
-            </a>
             <a href="{{ route('profile.index') }}" class="mobile-nav-item {{ request()->routeIs('profile.index') ? 'active' : '' }}">
                 <span class="nav-icon"><i class="bi bi-person-fill"></i></span>
                 <span class="nav-label">Profile</span>
@@ -277,10 +273,6 @@
                 <span class="nav-icon"><i class="bi bi-calculator"></i></span>
                 <span class="nav-label">POS</span>
             </a>
-            <a href="{{ route('chat.index') }}" class="mobile-nav-item {{ request()->routeIs('chat.*') ? 'active' : '' }}">
-                <span class="nav-icon"><i class="bi bi-chat-text-fill"></i></span>
-                <span class="nav-label">Team Chat</span>
-            </a>
             <a href="{{ route('inquiries.index') }}" class="mobile-nav-item {{ request()->routeIs('inquiries.*') ? 'active' : '' }}">
                 <span class="nav-icon"><i class="bi bi-envelope-paper"></i></span>
                 <span class="nav-label">Inquiries</span>
@@ -291,6 +283,13 @@
             </a>
         @endif
     </div>
+
+    @if(!request()->routeIs('chat.*'))
+        <!-- Floating Chat Action Button on Mobile -->
+        <a href="{{ route('chat.index') }}" class="mobile-chat-fab" title="Open Conversation">
+            <i class="bi bi-chat-dots-fill"></i>
+        </a>
+    @endif
 
     @stack('scripts')
 </body>

@@ -5041,3 +5041,43 @@ body.dashboard-body, body.dashboard-body * { box-sizing: border-box; }
     display: flex !important;
   }
 }
+
+/* ── Mobile Floating Chat Action Button ────────────────── */
+.mobile-chat-fab {
+  position: fixed;
+  bottom: 80px !important; /* Positioned perfectly right above the bottom navigation bar (65px + 15px spacing) */
+  right: 18px !important;
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #4f46e5, #3730a3) !important;
+  color: #ffffff !important;
+  display: none; /* Hidden on desktop */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4) !important;
+  z-index: 9998 !important;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-decoration: none !important;
+}
+
+.mobile-chat-fab i {
+  font-size: 1.60rem !important;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.mobile-chat-fab:hover {
+  transform: scale(1.08) translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5) !important;
+}
+
+.mobile-chat-fab:active {
+  transform: scale(0.95) !important;
+}
+
+@media (max-width: 767px) {
+  .mobile-chat-fab {
+    display: flex !important;
+  }
+}
