@@ -4859,16 +4859,34 @@ body.dashboard-body, body.dashboard-body * { box-sizing: border-box; }
 
 @media (max-width: 1080px) {
 
-  .support-chat-layout,
+  .support-chat-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-main-panel {
+    order: 1; /* Chat workspace at the top on mobile */
+  }
+
+  .support-queue {
+    order: 2; /* Support tickets go below on mobile */
+  }
+
   .inquiry-card,
   .dashboard-charts-section {
     grid-template-columns: 1fr;
   }
 
-  .support-ticket-list,
-  .chat-workspace-card {
+  .support-ticket-list {
     max-height: none;
     height: auto;
+  }
+
+  .chat-workspace-card {
+    /* Keep a beautiful fixed height on mobile so the chatbox scrolls internally and input is fixed */
+    height: calc(100vh - 240px);
+    min-height: 420px;
+    max-height: 600px;
   }
 
   .inquiry-card-actions {

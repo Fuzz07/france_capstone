@@ -3,6 +3,26 @@
 @section('title', 'Customer Support Chat')
 
 @section('content')
+@if(auth()->user()->role === 'user')
+    <style>
+        .support-queue {
+            display: none !important;
+        }
+        .support-chat-layout {
+            grid-template-columns: 1fr !important;
+        }
+        .page-header {
+            display: none !important;
+        }
+        @media (max-width: 767px) {
+            .chat-workspace-card {
+                height: calc(100vh - 120px) !important;
+                min-height: 380px !important;
+            }
+        }
+    </style>
+@endif
+
 <div class="page-header">
     <div class="page-title">
         <h2>Customer Support Chat</h2>
