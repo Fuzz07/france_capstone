@@ -79,6 +79,14 @@ class MainActivity : Activity() {
 
             setContentView(mainLayout)
 
+            // Enable Cookies and third-party cookies for Google Sign-In
+            android.webkit.CookieManager.getInstance().apply {
+                setAcceptCookie(true)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    setAcceptThirdPartyCookies(webView, true)
+                }
+            }
+
             webView.settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
@@ -87,6 +95,15 @@ class MainActivity : Activity() {
                 cacheMode = WebSettings.LOAD_DEFAULT
                 mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                 setSupportZoom(false)
+
+                // Workaround for Google OAuth "disallowed_useragent" error inside WebViews:
+                // We modify the User-Agent to remove "; wv" and the "Version/x.x" string,
+                // which lets Google identify this WebView as a standard mobile Chrome browser.
+                val defaultUserAgent = userAgentString
+                val customUserAgent = defaultUserAgent
+                    .replace("; wv", "")
+                    .replace(Regex("Version/[0-9.]+\\s"), "")
+                userAgentString = customUserAgent
             }
 
             webView.webViewClient = object : WebViewClient() {
