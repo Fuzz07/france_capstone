@@ -255,6 +255,10 @@ class SettingsController extends Controller
             'role' => 'required|string|in:user,admin',
         ]);
 
+        if ($data['role'] === 'admin' && User::where('role', 'admin')->exists()) {
+            return redirect()->route('users.index')->with('notice', 'There can only be one administrator in the system.')->with('noticeType', 'danger');
+        }
+
         User::create([
             'name' => $data['name'],
             'email' => $data['email'],
@@ -279,6 +283,13 @@ class SettingsController extends Controller
             'role' => 'required|string|in:user,admin',
         ]);
 
+        if ($data['role'] === 'admin') {
+            $existingAdmin = User::where('role', 'admin')->first();
+            if ($existingAdmin && $existingAdmin->id !== $user->id) {
+                return redirect()->route('users.index')->with('notice', 'There can only be one administrator in the system.')->with('noticeType', 'danger');
+            }
+        }
+
         $user->update([
             'role' => $data['role'],
         ]);
@@ -300,5 +311,33 @@ class SettingsController extends Controller
         $user->delete();
 
         return redirect()->route('users.index')->with('notice', 'User ' . $userName . ' deleted successfully.')->with('noticeType', 'success');
+    }
+
+    public function adminChangePassword(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (!\Illuminate\Support\Facades\Hash::check($data['current_password'], $user->password)) {
+            return redirect()->route('settings.index')
+                ->with('notice', 'The current password you entered is incorrect.')
+                ->with('noticeType', 'danger');
+        }
+
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($data['new_password']),
+        ]);
+
+        return redirect()->route('settings.index')
+            ->with('notice', 'Administrator password updated successfully!')
+            ->with('noticeType', 'success');
     }
 }

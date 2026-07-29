@@ -115,6 +115,9 @@ class MainActivity : Activity() {
                     offlineView.visibility = View.GONE
                     hideStaffControls(view)
                     
+                    // Flush cookies to disk so they persist across app restarts
+                    android.webkit.CookieManager.getInstance().flush()
+                    
                     // Evaluate login state from web app to hide/show bottom navigation dynamically
                     view.evaluateJavascript("window.isLoggedIn") { value ->
                         val cleanValue = value?.replace("\"", "")?.trim()
@@ -364,6 +367,11 @@ class MainActivity : Activity() {
         wrapper.addView(retry)
 
         return wrapper
+    }
+
+    override fun onPause() {
+        super.onPause()
+        android.webkit.CookieManager.getInstance().flush()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

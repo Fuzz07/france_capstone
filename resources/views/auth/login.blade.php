@@ -493,9 +493,11 @@
 
         function openSocialConsent(provider) {
             currentProvider = provider;
-            
-            // If they clicked Google and the Google SDK is successfully loaded, prompt it!
-            if (provider === 'google' && typeof google !== 'undefined') {
+
+            const isMobileApp = @json(session('is_mobile_app', false));
+
+            // If they clicked Google and are NOT in the mobile app, and the Google SDK is successfully loaded, prompt it!
+            if (provider === 'google' && !isMobileApp && typeof google !== 'undefined') {
                 google.accounts.id.prompt((notification) => {
                     if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
                         // Fall back to simulation if native prompt is skipped or blocked (e.g. adblocker, or no Client ID)

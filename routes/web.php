@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
 
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/change-password', [SettingsController::class, 'adminChangePassword'])->name('settings.change-password');
     Route::get('/settings/export', [SettingsController::class, 'export'])->name('settings.export');
     Route::post('/settings/action', [SettingsController::class, 'action'])->name('settings.action');
 

@@ -124,6 +124,35 @@
                 </div>
             </div>
 
+            {{-- Change Admin Password --}}
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3>Change Admin Password</h3>
+                </div>
+                <form method="POST" action="{{ route('settings.change-password') }}" style="display:flex; flex-direction:column; gap:12px; padding-top:8px;">
+                    @csrf
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label for="current_password" style="font-size:12px; font-weight:600; color:#475569;">Current Password</label>
+                        <input type="password" name="current_password" id="current_password" required placeholder="Enter current password" 
+                            style="border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; font-size:13.5px; outline:none; transition:border-color 0.2s;"
+                            onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'">
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label for="new_password" style="font-size:12px; font-weight:600; color:#475569;">New Password</label>
+                        <input type="password" name="new_password" id="new_password" required placeholder="At least 6 characters" 
+                            style="border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; font-size:13.5px; outline:none; transition:border-color 0.2s;"
+                            onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'">
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label for="new_password_confirmation" style="font-size:12px; font-weight:600; color:#475569;">Confirm New Password</label>
+                        <input type="password" name="new_password_confirmation" id="new_password_confirmation" required placeholder="Confirm new password" 
+                            style="border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; font-size:13.5px; outline:none; transition:border-color 0.2s;"
+                            onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" style="margin-top:4px;">Update Password</button>
+                </form>
+            </div>
+
             {{-- Maintenance Actions --}}
             <div class="panel-card">
                 <div class="panel-header">
