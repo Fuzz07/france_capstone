@@ -31,6 +31,8 @@ class MainActivity : Activity() {
     private lateinit var offlineView: View
     private lateinit var bottomNav: LinearLayout
     private lateinit var fabChatbot: View
+    private lateinit var chatOverlay: LinearLayout
+    private lateinit var chatWebView: WebView
     private val customerUrl: String by lazy { getString(R.string.customer_url) }
     private var fcmToken: String? = null
     
@@ -72,6 +74,102 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             ))
 
+            // Secondary WebView for Floating Chat
+            chatWebView = WebView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    0,
+                    1.0f
+                )
+                settings.apply {
+                    javaScriptEnabled = true
+                    domStorageEnabled = true
+                    databaseEnabled = true
+                    loadsImagesAutomatically = true
+                    cacheMode = WebSettings.LOAD_DEFAULT
+                    mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                }
+                
+                webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                        return handleNavigation(request.url)
+                    }
+                }
+            }
+
+            // Chat Overlay Header / Title Bar
+            val chatHeader = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dpToPx(56)
+                )
+                setBackgroundColor(Color.parseColor("#4f46e5")) // Indigo matching FAB
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dpToPx(16), 0, dpToPx(16), 0)
+
+                // Title Text
+                addView(TextView(this@MainActivity).apply {
+                    text = "💬 Live Chat Support"
+                    setTextColor(Color.WHITE)
+                    textSize = 16f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1.0f
+                    )
+                })
+
+                // Close Button ("✕")
+                addView(TextView(this@MainActivity).apply {
+                    text = "✕"
+                    setTextColor(Color.WHITE)
+                    textSize = 18f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    isClickable = true
+                    setPadding(dpToPx(12), dpToPx(12), dpToPx(12), dpToPx(12))
+                    
+                    val outValue = TypedValue()
+                    theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, outValue, true)
+                    setBackgroundResource(outValue.resourceId)
+
+                    setOnClickListener {
+                        chatOverlay.visibility = View.GONE
+                        chatWebView.onPause()
+                    }
+                })
+            }
+
+            // Combined Chat Overlay Container (Card/Sheet design)
+            chatOverlay = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                ).apply {
+                    // Modern sheet: leaves a subtle margin at the top so users see where they came from
+                    topMargin = dpToPx(50)
+                }
+                
+                // Rounded top corners and white background
+                val roundedBg = GradientDrawable().apply {
+                    setColor(Color.WHITE)
+                    val r = dpToPx(16).toFloat()
+                    cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
+                }
+                background = roundedBg
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    elevation = dpToPx(12).toFloat()
+                }
+                visibility = View.GONE // Hidden initially
+
+                addView(chatHeader)
+                addView(chatWebView)
+            }
+
+            contentFrame.addView(chatOverlay)
+
             // Floating Chatbot Button (FAB)
             fabChatbot = FrameLayout(this).apply {
                 layoutParams = FrameLayout.LayoutParams(
@@ -105,7 +203,11 @@ class MainActivity : Activity() {
 
                 setOnClickListener {
                     val rootBaseUrl = customerUrl.substringBefore("/user-app").substringBefore("?")
-                    webView.loadUrl(getFinalUrlWithToken("$rootBaseUrl/chat"))
+                    val chatUrl = getFinalUrlWithToken("$rootBaseUrl/chat")
+                    
+                    chatWebView.onResume()
+                    chatWebView.loadUrl(chatUrl)
+                    chatOverlay.visibility = View.VISIBLE
                 }
             }
 
@@ -424,7 +526,14 @@ class MainActivity : Activity() {
     }
 
     override fun onBackPressed() {
-        if (webView.canGoBack()) {
+        if (::chatOverlay.isInitialized && chatOverlay.visibility == View.VISIBLE) {
+            if (chatWebView.canGoBack()) {
+                chatWebView.goBack()
+            } else {
+                chatOverlay.visibility = View.GONE
+                chatWebView.onPause()
+            }
+        } else if (webView.canGoBack()) {
             webView.goBack()
         } else {
             super.onBackPressed()
