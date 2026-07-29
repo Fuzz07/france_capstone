@@ -3,6 +3,24 @@
 @section('title', 'Customer Support Chat')
 
 @section('content')
+<style>
+    @media (max-width: 767px) {
+        /* Hide page header on mobile to maximize chat window height */
+        .page-header {
+            display: none !important;
+        }
+        .chat-workspace-card {
+            height: calc(100vh - 90px) !important;
+            min-height: 400px !important;
+            border-radius: 0 !important; /* Full bleed layout on mobile */
+            border: none !important;
+        }
+        .chat-layout {
+            gap: 0 !important;
+        }
+    }
+</style>
+
 @if(auth()->user()->role === 'user')
     <style>
         .support-queue {
@@ -10,15 +28,6 @@
         }
         .support-chat-layout {
             grid-template-columns: 1fr !important;
-        }
-        .page-header {
-            display: none !important;
-        }
-        @media (max-width: 767px) {
-            .chat-workspace-card {
-                height: calc(100vh - 120px) !important;
-                min-height: 380px !important;
-            }
         }
     </style>
 @endif
