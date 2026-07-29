@@ -438,7 +438,7 @@
         window.addEventListener('load', function() {
             if (typeof google !== 'undefined') {
                 google.accounts.id.initialize({
-                    client_id: "{{ trim(env('GOOGLE_CLIENT_ID', '881682855171-epj4h8f6idbquon2d2t32l6at9g9unr7.apps.googleusercontent.com'), '\"\'') }}",
+                    client_id: "{{ trim(env('GOOGLE_CLIENT_ID', '1069663364838-9nir3njd1j1ooph3vihgg5snamu9861i.apps.googleusercontent.com'), '\"\'') }}",
                     callback: handleCredentialResponse
                 });
 
