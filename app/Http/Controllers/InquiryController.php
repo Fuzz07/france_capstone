@@ -166,9 +166,67 @@ class InquiryController extends Controller
 
     private function sendFcmPush($token, $title, $body)
     {
+        $serviceAccountPath = storage_path('app/firebase-service-account.json');
+        
+        // 1. Check if the modern FCM HTTP v1 Service Account JSON file is present
+        if (file_exists($serviceAccountPath)) {
+            try {
+                $serviceAccount = json_decode(file_get_contents($serviceAccountPath), true);
+                if (!$serviceAccount || !isset($serviceAccount['project_id']) || !isset($serviceAccount['private_key'])) {
+                    throw new \Exception("Invalid service account JSON structure.");
+                }
+
+                $accessToken = $this->getFcmAccessToken($serviceAccount);
+                $projectId = $serviceAccount['project_id'];
+                $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
+
+                // FCM HTTP v1 JSON Payload
+                $payload = [
+                    'message' => [
+                        'token' => $token,
+                        'notification' => [
+                            'title' => $title,
+                            'body' => $body,
+                        ],
+                        'data' => [
+                            'title' => $title,
+                            'body' => $body,
+                        ],
+                    ]
+                ];
+
+                $headers = [
+                    'Authorization: Bearer ' . $accessToken,
+                    'Content-Type: application/json',
+                ];
+
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+
+                $response = curl_exec($ch);
+                $err = curl_error($ch);
+                curl_close($ch);
+
+                if ($err) {
+                    \Log::error("FCM HTTP v1 cURL error: " . $err);
+                } else {
+                    \Log::info("FCM HTTP v1 response: " . $response);
+                }
+                return;
+            } catch (\Throwable $e) {
+                \Log::error("FCM HTTP v1 failed: " . $e->getMessage() . ". Falling back to Legacy API.");
+            }
+        }
+
+        // 2. Legacy API Fallback
         $serverKey = env('FCM_SERVER_KEY');
         if (!$serverKey) {
-            \Log::warning("FCM_SERVER_KEY is not configured in .env. Skipping push notification.");
+            \Log::warning("FCM_SERVER_KEY is not configured in .env and firebase-service-account.json is missing. Skipping push notification.");
             return;
         }
 
@@ -206,9 +264,60 @@ class InquiryController extends Controller
         curl_close($ch);
 
         if ($err) {
-            \Log::error("FCM cURL error: " . $err);
+            \Log::error("Legacy FCM cURL error: " . $err);
         } else {
-            \Log::info("FCM response: " . $response);
+            \Log::info("Legacy FCM response: " . $response);
         }
+    }
+
+    private function getFcmAccessToken($serviceAccount)
+    {
+        $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
+        $now = time();
+        $payload = json_encode([
+            'iss' => $serviceAccount['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'exp' => $now + 3600,
+            'iat' => $now
+        ]);
+
+        $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+        $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
+
+        $signatureInput = $base64UrlHeader . "." . $base64UrlPayload;
+        
+        $privateKey = $serviceAccount['private_key'];
+        if (!openssl_sign($signatureInput, $signature, $privateKey, OPENSSL_ALGO_SHA256)) {
+            throw new \Exception("Failed to sign JWT with private key.");
+        }
+
+        $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+        $jwt = $signatureInput . "." . $base64UrlSignature;
+
+        // Fetch access token via cURL
+        $ch = curl_init('https://oauth2.googleapis.com/token');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+            'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            'assertion' => $jwt
+        ]));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+        $response = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($err) {
+            throw new \Exception("OAuth2 token request error: " . $err);
+        }
+
+        $data = json_decode($response, true);
+        if (isset($data['error'])) {
+            throw new \Exception("OAuth2 error: " . $data['error_description']);
+        }
+
+        return $data['access_token'];
     }
 }
