@@ -50,11 +50,13 @@ class SettingsController extends Controller
         if ($action === 'reset_sales') {
             DB::table('sale_items')->truncate();
             DB::table('sales')->truncate();
+            \App\Models\ActivityLog::log('reset_sales', 'Admin cleared sales transaction history.');
             return redirect()->route('settings.index')->with('notice', 'Sales transaction history has been cleared.')->with('noticeType', 'success');
         }
 
         if ($action === 'reset_chat') {
             DB::table('messages')->truncate();
+            \App\Models\ActivityLog::log('reset_chat', 'Admin cleared chat history.');
             return redirect()->route('settings.index')->with('notice', 'Chat history has been cleared.')->with('noticeType', 'success');
         }
 
@@ -138,6 +140,8 @@ class SettingsController extends Controller
                     'quantity' => $product[4],
                 ]);
             }
+
+            \App\Models\ActivityLog::log('seed_products', 'Admin seeded demo inventory and reset sales history.');
 
             return redirect()->route('settings.index')->with('notice', 'Demo inventory loaded and sales history reset.')->with('noticeType', 'success');
         }
@@ -259,12 +263,14 @@ class SettingsController extends Controller
             return redirect()->route('users.index')->with('notice', 'There can only be one administrator in the system.')->with('noticeType', 'danger');
         }
 
-        User::create([
+        $newUser = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
             'role' => $data['role'],
         ]);
+
+        \App\Models\ActivityLog::log('create_user', 'Admin created new user: ' . $newUser->name . ' (' . $newUser->email . ', Role: ' . $newUser->role . ')');
 
         return redirect()->route('users.index')->with('notice', 'User ' . $data['name'] . ' created successfully.')->with('noticeType', 'success');
     }
@@ -290,9 +296,12 @@ class SettingsController extends Controller
             }
         }
 
+        $oldRole = $user->role;
         $user->update([
             'role' => $data['role'],
         ]);
+
+        \App\Models\ActivityLog::log('update_user_role', 'Admin updated user ' . $user->name . ' role from ' . $oldRole . ' to ' . $user->role);
 
         return redirect()->route('users.index')->with('notice', 'User ' . $user->name . ' role updated to ' . $data['role'] . '.')->with('noticeType', 'success');
     }
@@ -308,7 +317,10 @@ class SettingsController extends Controller
         }
 
         $userName = $user->name;
+        $userEmail = $user->email;
         $user->delete();
+
+        \App\Models\ActivityLog::log('delete_user', 'Admin deleted user ' . $userName . ' (' . $userEmail . ')');
 
         return redirect()->route('users.index')->with('notice', 'User ' . $userName . ' deleted successfully.')->with('noticeType', 'success');
     }
@@ -335,6 +347,8 @@ class SettingsController extends Controller
         $user->update([
             'password' => \Illuminate\Support\Facades\Hash::make($data['new_password']),
         ]);
+
+        \App\Models\ActivityLog::log('change_admin_password', 'Admin changed their password.');
 
         return redirect()->route('settings.index')
             ->with('notice', 'Administrator password updated successfully!')

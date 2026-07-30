@@ -42,10 +42,12 @@ class ChatController extends Controller
             'message' => 'required|string|max:5000',
         ]);
 
-        Message::create([
+        $msg = Message::create([
             'user_name' => auth()->user()->name,
             'message' => $request->input('message'),
         ]);
+
+        \App\Models\ActivityLog::log('chat_message', 'Sent a team chat message: "' . \Illuminate\Support\Str::limit($msg->message, 50) . '"');
 
         return redirect()->route('chat.index')->with('notice', 'Message sent.');
     }

@@ -150,6 +150,8 @@ class PosController extends Controller
         $cashTendered = (float) $validated['cash_tendered'];
         $change = $paymentMethod === 'gcash' ? 0.0 : max(0.0, $cashTendered - $grand);
 
+        \App\Models\ActivityLog::log('checkout_sale', 'Checked out sale #' . $saleId . ' via ' . strtoupper($paymentMethod) . ' (Total: PHP ' . number_format($grand, 2) . ')');
+
         $request->session()->forget('cart');
         $request->session()->put('receipt', [
             'sale_id' => $saleId,

@@ -59,7 +59,8 @@ class InquiryController extends Controller
             $validated['fcm_token'] = session('fcm_token');
         }
 
-        Inquiry::create($validated);
+        $inq = Inquiry::create($validated);
+        \App\Models\ActivityLog::log('submit_inquiry', 'Customer submitted inquiry: "' . $inq->subject . '"', Auth::user());
 
         $redirectRoute = $request->input('source') === 'mobile' ? 'mobile.home' : 'home';
 
@@ -78,6 +79,8 @@ class InquiryController extends Controller
             'responded_at' => now(),
             'responded_by' => Auth::id(),
         ]);
+
+        \App\Models\ActivityLog::log('reply_inquiry', 'Admin responded to inquiry #' . $inquiry->id . ' from ' . $inquiry->customer_name);
 
         // 1. Send Email Notification
         try {
@@ -117,13 +120,18 @@ class InquiryController extends Controller
         }
 
         $inquiry->save();
+        \App\Models\ActivityLog::log('update_inquiry_status', 'Updated status of inquiry #' . $inquiry->id . ' to ' . $inquiry->status);
 
         return back()->with('notice', 'Inquiry status updated successfully.')->with('noticeType', 'success');
     }
 
     public function destroy(Inquiry $inquiry)
     {
+        $id = $inquiry->id;
+        $subject = $inquiry->subject;
+        $customer = $inquiry->customer_name;
         $inquiry->delete();
+        \App\Models\ActivityLog::log('delete_inquiry', 'Deleted inquiry #' . $id . ' ("' . $subject . '" from ' . $customer . ')');
 
         return redirect()->route('inquiries.index')->with('notice', 'Inquiry deleted successfully.');
     }

@@ -43,17 +43,23 @@ class ProductController extends Controller
 
         if ($request->input('action') === 'edit') {
             $product = Product::findOrFail($request->input('id'));
+            $oldQuantity = $product->quantity;
             $product->update($data);
+            \App\Models\ActivityLog::log('update_product', 'Updated product: ' . $product->name . ' (SKU: ' . $product->sku . ', Qty: ' . $oldQuantity . ' -> ' . $product->quantity . ')');
             return redirect()->route('products.index')->with('notice', 'Product updated successfully.')->with('noticeType', 'success');
         }
 
-        Product::create($data);
+        $product = Product::create($data);
+        \App\Models\ActivityLog::log('create_product', 'Created new product: ' . $product->name . ' (SKU: ' . $product->sku . ', Price: PHP ' . number_format($product->price, 2) . ', Qty: ' . $product->quantity . ')');
         return redirect()->route('products.index')->with('notice', 'Product added successfully.')->with('noticeType', 'success');
     }
 
     public function destroy(Product $product)
     {
+        $name = $product->name;
+        $sku = $product->sku;
         $product->delete();
+        \App\Models\ActivityLog::log('delete_product', 'Deleted product: ' . $name . ' (SKU: ' . $sku . ')');
         return redirect()->route('products.index')->with('notice', 'Product successfully deleted.')->with('noticeType', 'success');
     }
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Api\DashboardDataController;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +72,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/users', [SettingsController::class, 'usersStore'])->name('users.store');
     Route::match(['post', 'patch'], '/users/{user}/role', [SettingsController::class, 'usersUpdateRole'])->name('users.role');
     Route::delete('/users/{user}', [SettingsController::class, 'usersDestroy'])->name('users.destroy');
+
+    Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
 
     Route::get('/profile', [InquiryController::class, 'profile'])->name('profile.index');
     Route::get('/notifications', [InquiryController::class, 'notifications'])->name('profile.notifications');

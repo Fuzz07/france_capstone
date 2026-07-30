@@ -37,10 +37,12 @@ class AuthController extends Controller
             }
             
             if (Auth::user()->role === 'admin') {
+                \App\Models\ActivityLog::log('login', 'Admin logged in: ' . Auth::user()->name);
                 return redirect()->intended(route('settings.index'))
                     ->with('notice', 'Welcome back, Admin ' . Auth::user()->name . '!')
                     ->with('noticeType', 'success');
             } else {
+                \App\Models\ActivityLog::log('login', 'Customer logged in: ' . Auth::user()->name);
                 return redirect()->intended(route('home'))
                     ->with('notice', 'Welcome back, ' . Auth::user()->name . '!')
                     ->with('noticeType', 'success');
@@ -73,6 +75,7 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+        \App\Models\ActivityLog::log('register', 'New customer account registered: ' . $user->name, $user);
 
         return redirect()->route('home')
             ->with('notice', 'Account created! Welcome, ' . $user->name . '.')
@@ -184,6 +187,9 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        if (Auth::check()) {
+            \App\Models\ActivityLog::log('logout', ucfirst(Auth::user()->role) . ' logged out: ' . Auth::user()->name);
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
