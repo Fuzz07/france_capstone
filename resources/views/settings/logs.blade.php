@@ -540,7 +540,7 @@
                     <td>
                         @if($log->user_agent)
                             <span class="agent-text mono-text" title="{{ $log->user_agent }}">
-                                {{ Str::limit($log->user_agent, 20) }}
+                                {{ \Illuminate\Support\Str::limit($log->user_agent, 20) }}
                             </span>
                         @else
                             <span class="mono-text" style="color: #cbd5e1;">N/A</span>
