@@ -36,7 +36,7 @@
         <div class="hero-image-column">
             <div class="hero-deco-blob"></div>
             <div class="hero-image-wrapper hero-image-clickable" id="heroImageBtn" onclick="openGallery(0)" title="Click to view shop photos" role="button" tabindex="0" aria-label="View shop gallery">
-                <img src="{{ request()->getBaseUrl() }}/images/hero_merchandise.png" alt="Mera's Merchandise Storefront Showcase">
+                <img src="{{ request()->getBaseUrl() }}/images/" alt="Mera's Merchandise Storefront Showcase">
                 <div class="gallery-hint-badge">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                     View Shop Photos

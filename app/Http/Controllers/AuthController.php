@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PasswordResetMail;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
-use Illuminate\Support\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\PasswordResetMail;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -70,8 +74,8 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
-            'role' => 'user', // Default registered users as customers/users!
+            'password' => Hash::make($data['password']),
+            'role' => 'user',
         ]);
 
         Auth::login($user);
@@ -85,102 +89,72 @@ class AuthController extends Controller
     public function socialLogin(Request $request)
     {
         try {
-            // Handle Real Google JWT Token verification
-            if ($request->has('credential') && $request->input('provider') === 'google') {
-                $idToken = $request->input('credential');
-                
-                // Call Google's official Tokeninfo endpoint natively with zero external dependencies
-                $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($idToken);
-                $responseJson = null;
+            $idToken = $request->input('credential');
+            $provider = $request->input('provider');
 
-                if (function_exists('curl_init')) {
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, $url);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                    $responseJson = curl_exec($ch);
-                    curl_close($ch);
-                }
-
-                if (empty($responseJson)) {
-                    $context = stream_context_create([
-                        "ssl" => [
-                            "verify_peer" => false,
-                            "verify_peer_name" => false,
-                        ]
-                    ]);
-                    $responseJson = @file_get_contents($url, false, $context);
-                }
-                
-                if (!empty($responseJson)) {
-                    $payload = json_decode($responseJson, true);
-                    $email = $payload['email'] ?? null;
-                    $name = $payload['name'] ?? null;
-                    
-                    if ($email) {
-                        $user = User::where('email', $email)->first();
-                        
-                        if (!$user) {
-                            $user = User::create([
-                                'name' => $name ?? 'Google User',
-                                'email' => $email,
-                                'password' => \Illuminate\Support\Facades\Hash::make(uniqid('google_')),
-                                'role' => $email === 'jamesalagban83@gmail.com' ? 'admin' : 'user',
-                            ]);
-                        } elseif ($email === 'jamesalagban83@gmail.com' && $user->role !== 'admin') {
-                            $user->update(['role' => 'admin']);
-                        }
-                        
-                        Auth::login($user);
-                        $request->session()->regenerate();
-                        
-                        return response()->json([
-                            'success' => true,
-                            'redirect' => route('home'),
-                            'message' => 'Successfully authenticated with Google!'
-                        ]);
-                    }
-                }
-                
+            if (!$idToken || $provider !== 'google') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to verify Google identity token.'
+                    'message' => 'Invalid authentication parameters.'
                 ], 422);
             }
+            
+            $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($idToken);
+            $responseJson = null;
 
-            // Fallback to beautiful simulation
-            $data = $request->validate([
-                'email' => 'required|email',
-                'name' => 'required|string|max:255',
-                'provider' => 'required|string|in:google,facebook',
-            ]);
-
-            $user = User::where('email', $data['email'])->first();
-
-            if (!$user) {
-                $user = User::create([
-                    'name' => $data['name'],
-                    'email' => $data['email'],
-                    'password' => \Illuminate\Support\Facades\Hash::make(uniqid('google_')),
-                    'role' => 'user',
-                ]);
+            if (function_exists('curl_init')) {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                $responseJson = curl_exec($ch);
+                curl_close($ch);
             }
 
-            Auth::login($user);
+            if (empty($responseJson)) {
+                $responseJson = @file_get_contents($url);
+            }
             
-            $request->session()->regenerate();
-
-            return response()->json([
-                'success' => true,
-                'redirect' => route('home'),
-                'message' => 'Successfully authenticated with ' . ucfirst($data['provider']) . '!'
-            ]);
-        } catch (\Throwable $e) {
+            if (!empty($responseJson)) {
+                $payload = json_decode($responseJson, true);
+                $email = $payload['email'] ?? null;
+                $name = $payload['name'] ?? null;
+                $emailVerified = $payload['email_verified'] ?? false;
+                
+                if ($email && ($emailVerified === true || $emailVerified === 'true' || $emailVerified === 1)) {
+                    $user = User::where('email', $email)->first();
+                    
+                    if (!$user) {
+                        $user = User::create([
+                            'name' => $name ?? 'Google User',
+                            'email' => $email,
+                            'password' => Hash::make(Str::random(32)),
+                            'role' => 'user',
+                        ]);
+                    }
+                    
+                    Auth::login($user);
+                    $request->session()->regenerate();
+                    
+                    return response()->json([
+                        'success' => true,
+                        'redirect' => route('home'),
+                        'message' => 'Successfully authenticated with Google!'
+                    ]);
+                }
+            }
+            
             return response()->json([
                 'success' => false,
-                'message' => 'PHP Backend Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine()
+                'message' => 'Failed to verify Google identity token.'
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Social login failure: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication processing failed.'
             ], 500);
         }
     }
@@ -216,16 +190,24 @@ class AuthController extends Controller
             $email = $request->input('email');
             $user = User::where('email', $email)->first();
 
-            // Cryptographically secure, zero-DB token linked to the email and current date (expires at midnight PST)
-            $token = sha1($email . 'password_reset_salt_2026_meras' . now()->toDateString());
+            $plainToken = Str::random(60);
 
-            $resetUrl = route('password.reset', ['token' => $token, 'email' => $email]);
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $email],
+                [
+                    'token' => Hash::make($plainToken),
+                    'created_at' => now(),
+                ]
+            );
+
+            $resetUrl = route('password.reset', ['token' => $plainToken, 'email' => $email]);
 
             try {
                 Mail::to($email)->send(new PasswordResetMail($user->name, $resetUrl));
             } catch (\Throwable $e) {
+                Log::error('Password reset mail send failed: ' . $e->getMessage());
                 return back()->withErrors([
-                    'email' => 'Mailer Transport Failure: ' . $e->getMessage() . ' | Config Structure: ' . json_encode(config('mail')),
+                    'email' => 'Unable to send reset email at this moment. Please try again later.',
                 ])->withInput();
             }
 
@@ -234,8 +216,9 @@ class AuthController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
+            Log::error('sendResetLinkEmail error: ' . $e->getMessage());
             return back()->withErrors([
-                'email' => 'PHP Server Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine(),
+                'email' => 'An error occurred while processing your request. Please try again.',
             ])->withInput();
         }
     }
@@ -250,13 +233,9 @@ class AuthController extends Controller
         $email = $request->input('email');
         $token = $request->input('token');
 
-        // Verify token matches the daily dynamic key
-        $expectedToken = sha1($email . 'password_reset_salt_2026_meras' . now()->toDateString());
-        
-        // Also check if yesterday's token works (in case they request it right before midnight, gives them a rolling 24h window!)
-        $yesterdayToken = sha1($email . 'password_reset_salt_2026_meras' . now()->subDay()->toDateString());
+        $record = DB::table('password_reset_tokens')->where('email', $email)->first();
 
-        if ($token !== $expectedToken && $token !== $yesterdayToken) {
+        if (!$record || !Hash::check($token, $record->token) || Carbon::parse($record->created_at)->addMinutes(60)->isPast()) {
             return redirect()->route('password.request')
                 ->with('notice', 'This password reset link is invalid or has expired. Please request a new one.')
                 ->with('noticeType', 'danger');
@@ -280,10 +259,9 @@ class AuthController extends Controller
             $email = $request->input('email');
             $token = $request->input('token');
 
-            $expectedToken = sha1($email . 'password_reset_salt_2026_meras' . now()->toDateString());
-            $yesterdayToken = sha1($email . 'password_reset_salt_2026_meras' . now()->subDay()->toDateString());
+            $record = DB::table('password_reset_tokens')->where('email', $email)->first();
 
-            if ($token !== $expectedToken && $token !== $yesterdayToken) {
+            if (!$record || !Hash::check($token, $record->token) || Carbon::parse($record->created_at)->addMinutes(60)->isPast()) {
                 return redirect()->route('password.request')
                     ->with('notice', 'This password reset link is invalid or has expired. Please request a new one.')
                     ->with('noticeType', 'danger');
@@ -291,8 +269,10 @@ class AuthController extends Controller
 
             $user = User::where('email', $email)->first();
             $user->update([
-                'password' => \Illuminate\Support\Facades\Hash::make($request->input('password')),
+                'password' => Hash::make($request->input('password')),
             ]);
+
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
 
             return redirect()->route('login')
                 ->with('notice', 'Your password has been successfully updated! You can now log in with your new credentials.')
@@ -300,22 +280,28 @@ class AuthController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
+            Log::error('updatePassword error: ' . $e->getMessage());
             return back()->withErrors([
-                'password' => 'PHP Server Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine(),
+                'password' => 'An error occurred while updating your password. Please try again.',
             ])->withInput();
         }
     }
 
     public function testMail()
     {
+        if (!Auth::check() || Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+
         try {
-            Mail::raw('Mera\'s Store SMTP connection test was successful!', function ($message) {
-                $message->to('jamesalagban83@gmail.com')
+            Mail::raw("Mera's Store SMTP connection test was successful!", function ($message) {
+                $message->to(Auth::user()->email)
                         ->subject('Store SMTP Mail Test');
             });
-            return "<h3>SMTP Connection Success!</h3>The email was successfully sent to jamesalagban83@gmail.com! Your SMTP configurations are 100% correct!";
+            return "<h3>SMTP Connection Success!</h3>The email was successfully sent to " . e(Auth::user()->email) . "!";
         } catch (\Throwable $e) {
-            return "<h3>SMTP Mail Sending Failed!</h3><b>Error Message:</b> " . $e->getMessage() . "<br><br><b>File:</b> " . $e->getFile() . " on line " . $e->getLine() . "<br><br><b>Raw Config loaded:</b><pre>" . json_encode(config('mail'), JSON_PRETTY_PRINT) . "</pre>";
+            Log::error('SMTP Test Mail error: ' . $e->getMessage());
+            return "<h3>SMTP Mail Sending Failed!</h3>Please check application log files for error trace.";
         }
     }
 }

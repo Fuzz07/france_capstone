@@ -173,7 +173,10 @@
             </div>
             <div class="logout-confirm-actions">
                 <button type="button" class="btn btn-secondary" id="cancelLogoutBtn">Stay Signed In</button>
-                <a href="{{ route('logout') }}" class="btn btn-danger" id="confirmLogoutBtn">Log Out</a>
+                <form id="logoutForm" action="{{ route('logout') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-danger" id="confirmLogoutBtn">Log Out</button>
+                </form>
             </div>
         </div>
     </div>
@@ -211,7 +214,6 @@
             const logoutLink = event.target.closest('[data-logout-confirm]');
             if (!logoutLink) return;
             event.preventDefault();
-            confirmLogoutBtn.href = logoutLink.href;
             logoutConfirmModal.classList.add('open');
             logoutConfirmModal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('logout-modal-open');

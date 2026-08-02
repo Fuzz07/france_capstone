@@ -10,9 +10,9 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ActivityLogController;
-use App\Http\Controllers\Api\DashboardDataController;
 use Illuminate\Support\Facades\Route;
 
+// Public catalog and mobile download routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/user-app', [HomeController::class, 'mobile'])->name('mobile.home');
 Route::get('/download/android-app', function () {
@@ -22,8 +22,8 @@ Route::get('/download/android-app', function () {
         ->header('Expires', '0');
 })->name('mobile.download');
 Route::post('/inquiries', [InquiryController::class, 'store'])->name('inquiries.store');
-Route::get('/test-mail', [AuthController::class, 'testMail']);
 
+// Guest Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -38,7 +38,20 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
 });
 
+// Authenticated Routes (Customers & Admins)
 Route::middleware('auth')->group(function () {
+    Route::get('/profile', [InquiryController::class, 'profile'])->name('profile.index');
+    Route::get('/notifications', [InquiryController::class, 'notifications'])->name('profile.notifications');
+
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/messages', [ChatController::class, 'messages'])->name('chat.messages');
+    Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.store');
+
+    Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
+});
+
+// Administrative & Management Routes (Strict Admin Role Required)
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('products', ProductController::class)->except(['show']);
 
@@ -47,21 +60,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
     Route::post('/pos/cart/update', [PosController::class, 'updateCart'])->name('pos.updateCart');
     Route::post('/pos/cart/clear', [PosController::class, 'clearCart'])->name('pos.clearCart');
-
-    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-    Route::get('/chat/messages', [ChatController::class, 'messages'])->name('chat.messages');
-    Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.store');
+    Route::get('/sales/{sale}/print', [PosController::class, 'printSale'])->name('sales.print');
 
     Route::get('/inquiries', [InquiryController::class, 'index'])->name('inquiries.index');
     Route::match(['post', 'patch'], '/inquiries/{inquiry}/toggle', [InquiryController::class, 'toggle'])->name('inquiries.toggle');
     Route::post('/inquiries/{inquiry}/respond', [InquiryController::class, 'respond'])->name('inquiries.respond');
-    Route::delete('/inquiries/{inquiry}', [InquiryController::class, 'destroy'])->name('inquiries.destroy');    
+    Route::delete('/inquiries/{inquiry}', [InquiryController::class, 'destroy'])->name('inquiries.destroy');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
-
-    Route::get('/sales/{sale}/print', [PosController::class, 'printSale'])->name('sales.print');
-
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/change-password', [SettingsController::class, 'adminChangePassword'])->name('settings.change-password');
@@ -74,34 +81,5 @@ Route::middleware('auth')->group(function () {
     Route::delete('/users/{user}', [SettingsController::class, 'usersDestroy'])->name('users.destroy');
 
     Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
-
-    Route::get('/profile', [InquiryController::class, 'profile'])->name('profile.index');
-    Route::get('/notifications', [InquiryController::class, 'notifications'])->name('profile.notifications');
-
-    Route::get('/run-migrations', function () {
-        if (Auth::user()->role !== 'admin') {
-            abort(403);
-        }
-        try {
-            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            return "Migrations run successfully! Output: <pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
-        } catch (\Exception $e) {
-            return "Migration failed: " . $e->getMessage();
-        }
-    });
-
-    Route::get('/get-error-log', function () {
-        if (Auth::user()->role !== 'admin') {
-            abort(403);
-        }
-        $logPath = storage_path('logs/laravel.log');
-        if (file_exists($logPath)) {
-            $lines = file($logPath);
-            $lastLines = array_slice($lines, -150);
-            return "<pre>" . implode("", $lastLines) . "</pre>";
-        }
-        return "Log file not found.";
-    });
-
-    Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/test-mail', [AuthController::class, 'testMail'])->name('admin.test-mail');
 });
