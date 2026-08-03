@@ -419,10 +419,12 @@
         // Initialize Real Google SDK
         window.addEventListener('load', function() {
             const isMobileApp = @json(session('is_mobile_app', false));
-            if (!isMobileApp && typeof google !== 'undefined') {
+            if (typeof google !== 'undefined') {
                 google.accounts.id.initialize({
                     client_id: "{{ trim(env('GOOGLE_CLIENT_ID', '1069663364838-9nir3njd1j1ooph3vihgg5snamu9861i.apps.googleusercontent.com'), '\"\'') }}",
-                    callback: handleCredentialResponse
+                    ux_mode: isMobileApp ? 'redirect' : 'popup',
+                    login_uri: isMobileApp ? "{{ route('social.login') }}" : undefined,
+                    callback: isMobileApp ? undefined : handleCredentialResponse
                 });
 
                 const btnDiv = document.getElementById("googleButtonDiv");

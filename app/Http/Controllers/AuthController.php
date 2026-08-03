@@ -90,14 +90,18 @@ class AuthController extends Controller
     {
         try {
             $idToken = $request->input('credential');
-            $provider = $request->input('provider');
+            $provider = $request->input('provider', 'google');
             $isMobileApp = session('is_mobile_app', false);
 
             if ($provider !== 'google') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid authentication parameters.'
-                ], 422);
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid authentication parameters.'
+                    ], 422);
+                }
+                return redirect()->route('login')
+                    ->withErrors(['email' => 'Invalid authentication parameters.']);
             }
 
             // Fallback for mobile app or custom simulated Google accounts (when credential/idToken is not provided)
@@ -120,17 +124,24 @@ class AuthController extends Controller
                     Auth::login($user);
                     $request->session()->regenerate();
 
-                    return response()->json([
-                        'success' => true,
-                        'redirect' => route('mobile.home'),
-                        'message' => 'Successfully authenticated with Google (Simulated)!'
-                    ]);
+                    if ($request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => true,
+                            'redirect' => route('mobile.home'),
+                            'message' => 'Successfully authenticated with Google (Simulated)!'
+                        ]);
+                    }
+                    return redirect()->route('mobile.home');
                 }
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid authentication parameters.'
-                ], 422);
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid authentication parameters.'
+                    ], 422);
+                }
+                return redirect()->route('login')
+                    ->withErrors(['email' => 'Invalid authentication parameters.']);
             }
             
             $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($idToken);
@@ -172,24 +183,40 @@ class AuthController extends Controller
                     Auth::login($user);
                     $request->session()->regenerate();
                     
-                    return response()->json([
-                        'success' => true,
-                        'redirect' => route('home'),
-                        'message' => 'Successfully authenticated with Google!'
-                    ]);
+                    if ($request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => true,
+                            'redirect' => $isMobileApp ? route('mobile.home') : route('home'),
+                            'message' => 'Successfully authenticated with Google!'
+                        ]);
+                    } else {
+                        return redirect()->to($isMobileApp ? route('mobile.home') : route('home'))
+                            ->with('notice', 'Successfully authenticated with Google!')
+                            ->with('noticeType', 'success');
+                    }
                 }
             }
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to verify Google identity token.'
-            ], 422);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to verify Google identity token.'
+                ], 422);
+            } else {
+                return redirect()->route('login')
+                    ->withErrors(['email' => 'Failed to verify Google identity token.']);
+            }
         } catch (\Throwable $e) {
             Log::error('Social login failure: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Authentication processing failed.'
-            ], 500);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication processing failed.'
+                ], 500);
+            } else {
+                return redirect()->route('login')
+                    ->withErrors(['email' => 'Authentication processing failed. Details: ' . $e->getMessage()]);
+            }
         }
     }
 
