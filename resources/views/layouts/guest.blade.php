@@ -8,61 +8,167 @@
     <link rel="stylesheet" href="{{ request()->getBaseUrl() }}/css/style.css">
     <link rel="stylesheet" href="{{ request()->getBaseUrl() }}/css/landing.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    @php
+        $isMobileApp = session('is_mobile_app', false) || (isset($_SERVER['HTTP_USER_AGENT']) && str_contains($_SERVER['HTTP_USER_AGENT'], 'MerasUserApp'));
+        if ($isMobileApp && !session('is_mobile_app')) {
+            session(['is_mobile_app' => true]);
+        }
+        $showWebBottomNav = !$isMobileApp;
+    @endphp
+
+    @if($isMobileApp)
+        <!-- Premium Mobile App UI Polish -->
+        <style>
+            @media (max-width: 767px) {
+                /* Full height content and zero offsets since there is no header/footer */
+                .guest-main-content {
+                    min-height: 100vh !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    background: #ffffff !important; /* Premium clean layout background */
+                }
+
+                /* Hide standard web header and footer inside mobile app */
+                .guest-header, .app-footer {
+                    display: none !important;
+                }
+
+                /* For login, register, forgot-password, reset-password card containers */
+                .guest-main-content:has(.auth-container) {
+                    padding: 8px 16px !important;
+                    background: #ffffff !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                }
+
+                .auth-container {
+                    box-shadow: none !important;
+                    border: none !important;
+                    padding: 16px 4px !important;
+                    background-color: transparent !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    margin: 0 !important;
+                }
+
+                /* Ensure all inputs and buttons feel highly native, rounded and polished */
+                .form-control {
+                    height: 48px !important;
+                    font-size: 0.95rem !important;
+                    border-radius: 10px !important;
+                    border: 1px solid #cbd5e1 !important;
+                    background-color: #f8fafc !important;
+                    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+                }
+                .form-control:focus {
+                    border-color: #4f46e5 !important;
+                    background-color: #ffffff !important;
+                    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+                }
+                .btn-primary {
+                    height: 48px !important;
+                    border-radius: 10px !important;
+                    font-size: 0.95rem !important;
+                    font-weight: 700 !important;
+                    background: #4f46e5 !important;
+                    border: none !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1), 0 2px 4px -1px rgba(79, 70, 229, 0.06) !important;
+                }
+                /* Social login simulated buttons inside the app */
+                .btn-social {
+                    height: 48px !important;
+                    border-radius: 10px !important;
+                    border: 1px solid #cbd5e1 !important;
+                    font-size: 0.9rem !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    gap: 10px !important;
+                }
+                /* Spacing adjustments on mobile app */
+                .auth-header h2 {
+                    font-size: 1.6rem !important;
+                    font-weight: 800 !important;
+                    color: #0f172a !important;
+                    margin-bottom: 6px !important;
+                }
+                .auth-header p {
+                    font-size: 0.85rem !important;
+                    color: #64748b !important;
+                    line-height: 1.4 !important;
+                }
+                /* Custom alert styling */
+                .alert {
+                    border-radius: 10px !important;
+                    font-size: 0.85rem !important;
+                    padding: 12px 16px !important;
+                }
+            }
+        </style>
+    @endif
 </head>
 <body>
-    <header class="guest-header">
-        <div class="guest-nav-container">
-            <a href="{{ route('home') }}" class="guest-brand">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                <span>{{ config('app.name') }}</span>
-            </a>
-            <div class="guest-links">
-                <a href="{{ route('home') }}#products" class="guest-link">Browse</a>
-                <a href="{{ route('home') }}#inquire" class="guest-link">Contact</a>
-                @if(Auth::check())
-                    <a href="{{ route('profile.index') }}" class="guest-link" style="font-weight: bold; color: #4f46e5;">👤 My Account</a>
-                    <a href="{{ route('profile.notifications') }}" class="guest-link">🔔 Alerts</a>
-                    <a href="{{ route('logout') }}" data-logout-confirm class="guest-link" style="color: #ef4444;">Logout</a>
-                @else
-                    <a href="{{ route('login') }}" class="guest-link btn-guest-login-outline" style="font-weight: bold; color: #4f46e5 !important; border: 1px solid #4f46e5; padding: 6px 14px; border-radius: 6px; margin-right: 4px;">🔑 Log In</a>
-                    <a href="{{ route('register') }}" class="guest-link btn-guest-login" style="background-color: #4f46e5; color: #ffffff !important; padding: 6px 14px; border-radius: 6px;">Register</a>
-                @endif
+    @if(!$isMobileApp)
+        <header class="guest-header">
+            <div class="guest-nav-container">
+                <a href="{{ route('home') }}" class="guest-brand">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    <span>{{ config('app.name') }}</span>
+                </a>
+                <div class="guest-links">
+                    <a href="{{ route('home') }}#products" class="guest-link">Browse</a>
+                    <a href="{{ route('home') }}#inquire" class="guest-link">Contact</a>
+                    @if(Auth::check())
+                        <a href="{{ route('profile.index') }}" class="guest-link" style="font-weight: bold; color: #4f46e5;">👤 My Account</a>
+                        <a href="{{ route('profile.notifications') }}" class="guest-link">🔔 Alerts</a>
+                        <a href="{{ route('logout') }}" data-logout-confirm class="guest-link" style="color: #ef4444;">Logout</a>
+                    @else
+                        <a href="{{ route('login') }}" class="guest-link btn-guest-login-outline" style="font-weight: bold; color: #4f46e5 !important; border: 1px solid #4f46e5; padding: 6px 14px; border-radius: 6px; margin-right: 4px;">🔑 Log In</a>
+                        <a href="{{ route('register') }}" class="guest-link btn-guest-login" style="background-color: #4f46e5; color: #ffffff !important; padding: 6px 14px; border-radius: 6px;">Register</a>
+                    @endif
+                </div>
             </div>
-        </div>
-    </header>
+        </header>
+    @endif
 
     <main class="guest-main-content">
         @yield('content')
     </main>
 
-    <footer class="app-footer">
-        <div class="footer-grid">
-            <div class="footer-brand-col">
-                <a href="{{ route('home') }}" class="footer-brand">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                    <span>{{ config('app.name') }}</span>
-                </a>
-                <p class="footer-desc">Premium school supplies, high-quality fabrics, and general merchandise for families and businesses throughout Bantayan. Proudly serving the community with value and care.</p>
+    @if(!$isMobileApp)
+        <footer class="app-footer">
+            <div class="footer-grid">
+                <div class="footer-brand-col">
+                    <a href="{{ route('home') }}" class="footer-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <span>{{ config('app.name') }}</span>
+                    </a>
+                    <p class="footer-desc">Premium school supplies, high-quality fabrics, and general merchandise for families and businesses throughout Bantayan. Proudly serving the community with value and care.</p>
+                </div>
+                <div class="footer-links-col">
+                    <h4 class="footer-title">Quick Links</h4>
+                    <nav class="footer-nav">
+                        <a href="{{ route('home') }}#products" class="footer-nav-link">Browse Products</a>
+                        <a href="{{ route('home') }}#inquire" class="footer-nav-link">Send Inquiry</a>
+                        @empty($hideAppDownload)
+                            <a href="{{ route('mobile.download') }}" class="footer-nav-link">Download Android App</a>
+                        @endempty
+                        @empty($hideStaffLinks)
+                            <a href="{{ route('login') }}" class="footer-nav-link">Staff Dashboard Portal</a>
+                        @endempty
+                    </nav>
+                </div>
             </div>
-            <div class="footer-links-col">
-                <h4 class="footer-title">Quick Links</h4>
-                <nav class="footer-nav">
-                    <a href="{{ route('home') }}#products" class="footer-nav-link">Browse Products</a>
-                    <a href="{{ route('home') }}#inquire" class="footer-nav-link">Send Inquiry</a>
-                    @empty($hideAppDownload)
-                        <a href="{{ route('mobile.download') }}" class="footer-nav-link">Download Android App</a>
-                    @endempty
-                    @empty($hideStaffLinks)
-                        <a href="{{ route('login') }}" class="footer-nav-link">Staff Dashboard Portal</a>
-                    @endempty
-                </nav>
+            <div class="footer-bottom">
+                <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+                <p>Stall No. 18, Bantayan Public Market, Suba, Bantayan, Cebu 6052</p>
             </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-            <p>Stall No. 18, Bantayan Public Market, Suba, Bantayan, Cebu 6052</p>
-        </div>
-    </footer>
+        </footer>
+    @endif
 
     <script>
         window.isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
@@ -87,14 +193,6 @@
             });
         });
     </script>
-    
-    @php
-        $isMobileApp = session('is_mobile_app', false) || (isset($_SERVER['HTTP_USER_AGENT']) && str_contains($_SERVER['HTTP_USER_AGENT'], 'MerasUserApp'));
-        if ($isMobileApp && !session('is_mobile_app')) {
-            session(['is_mobile_app' => true]);
-        }
-        $showWebBottomNav = !$isMobileApp;
-    @endphp
 
     @if($showWebBottomNav)
         <!-- Bottom Navigation Bar for Mobile -->
