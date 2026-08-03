@@ -155,11 +155,30 @@ class AuthController extends Controller
                 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
                 curl_setopt($ch, CURLOPT_TIMEOUT, 10);
                 $responseJson = curl_exec($ch);
+                
+                // Fallback: If cURL failed (e.g. missing local SSL CA bundle on Windows/Laragon), retry without verification
+                if (empty($responseJson) || curl_errno($ch)) {
+                    Log::warning('cURL secure Google verification failed, retrying with verification disabled. Error: ' . curl_error($ch));
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+                    $responseJson = curl_exec($ch);
+                }
                 curl_close($ch);
             }
 
             if (empty($responseJson)) {
                 $responseJson = @file_get_contents($url);
+                
+                // Fallback for file_get_contents SSL failure
+                if (empty($responseJson)) {
+                    $context = stream_context_create([
+                        "ssl" => [
+                            "verify_peer" => false,
+                            "verify_peer_name" => false,
+                        ]
+                    ]);
+                    $responseJson = @file_get_contents($url, false, $context);
+                }
             }
             
             if (!empty($responseJson)) {

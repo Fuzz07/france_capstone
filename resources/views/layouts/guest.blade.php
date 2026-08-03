@@ -89,7 +89,11 @@
     </script>
     
     @php
-        $showWebBottomNav = !session('is_mobile_app');
+        $isMobileApp = session('is_mobile_app', false) || (isset($_SERVER['HTTP_USER_AGENT']) && str_contains($_SERVER['HTTP_USER_AGENT'], 'MerasUserApp'));
+        if ($isMobileApp && !session('is_mobile_app')) {
+            session(['is_mobile_app' => true]);
+        }
+        $showWebBottomNav = !$isMobileApp;
     @endphp
 
     @if($showWebBottomNav)

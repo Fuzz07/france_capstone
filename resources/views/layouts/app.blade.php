@@ -256,46 +256,56 @@
         }
     </style>
 
-    <!-- Premium Mobile Bottom Navigation Bar (Bootstrap Pattern) -->
-    <div class="mobile-bottom-nav">
-        @if(auth()->user()->role === 'user')
-            <!-- Customer Bottom Navigation -->
-            <a href="{{ route('home') }}" class="mobile-nav-item {{ request()->routeIs('home') && !request()->has('products') && !request()->has('inquire') ? 'active' : '' }}">
-                <span class="nav-icon"><i class="bi bi-house-door"></i></span>
-                <span class="nav-label">Home</span>
-            </a>
-            <a href="{{ route('home') }}#products" class="mobile-nav-item">
-                <span class="nav-icon"><i class="bi bi-grid"></i></span>
-                <span class="nav-label">Products</span>
-            </a>
-            <a href="{{ route('home') }}#inquire" class="mobile-nav-item">
-                <span class="nav-icon"><i class="bi bi-envelope"></i></span>
-                <span class="nav-label">Inquiry</span>
-            </a>
-            <a href="{{ route('profile.index') }}" class="mobile-nav-item {{ request()->routeIs('profile.index') ? 'active' : '' }}">
-                <span class="nav-icon"><i class="bi bi-person-fill"></i></span>
-                <span class="nav-label">Profile</span>
-            </a>
-        @else
-            <!-- Staff / Admin Bottom Navigation -->
-            <a href="{{ route('dashboard') }}" class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
-                <span class="nav-label">Dashboard</span>
-            </a>
-            <a href="{{ route('pos.index') }}" class="mobile-nav-item {{ request()->routeIs('pos.*') ? 'active' : '' }}">
-                <span class="nav-icon"><i class="bi bi-calculator"></i></span>
-                <span class="nav-label">POS</span>
-            </a>
-            <a href="{{ route('inquiries.index') }}" class="mobile-nav-item {{ request()->routeIs('inquiries.*') ? 'active' : '' }}">
-                <span class="nav-icon"><i class="bi bi-envelope-paper"></i></span>
-                <span class="nav-label">Inquiries</span>
-            </a>
-            <a href="{{ route('reports.index') }}" class="mobile-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                <span class="nav-icon"><i class="bi bi-graph-up-arrow"></i></span>
-                <span class="nav-label">Reports</span>
-            </a>
-        @endif
-    </div>
+    @php
+        $isMobileApp = session('is_mobile_app', false) || (isset($_SERVER['HTTP_USER_AGENT']) && str_contains($_SERVER['HTTP_USER_AGENT'], 'MerasUserApp'));
+        if ($isMobileApp && !session('is_mobile_app')) {
+            session(['is_mobile_app' => true]);
+        }
+        $showWebBottomNav = !$isMobileApp;
+    @endphp
+
+    @if($showWebBottomNav)
+        <!-- Premium Mobile Bottom Navigation Bar (Bootstrap Pattern) -->
+        <div class="mobile-bottom-nav">
+            @if(auth()->user()->role === 'user')
+                <!-- Customer Bottom Navigation -->
+                <a href="{{ route('home') }}" class="mobile-nav-item {{ request()->routeIs('home') && !request()->has('products') && !request()->has('inquire') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="bi bi-house-door"></i></span>
+                    <span class="nav-label">Home</span>
+                </a>
+                <a href="{{ route('home') }}#products" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-grid"></i></span>
+                    <span class="nav-label">Products</span>
+                </a>
+                <a href="{{ route('home') }}#inquire" class="mobile-nav-item">
+                    <span class="nav-icon"><i class="bi bi-envelope"></i></span>
+                    <span class="nav-label">Inquiry</span>
+                </a>
+                <a href="{{ route('profile.index') }}" class="mobile-nav-item {{ request()->routeIs('profile.index') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="bi bi-person-fill"></i></span>
+                    <span class="nav-label">Profile</span>
+                </a>
+            @else
+                <!-- Staff / Admin Bottom Navigation -->
+                <a href="{{ route('dashboard') }}" class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="{{ route('pos.index') }}" class="mobile-nav-item {{ request()->routeIs('pos.*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="bi bi-calculator"></i></span>
+                    <span class="nav-label">POS</span>
+                </a>
+                <a href="{{ route('inquiries.index') }}" class="mobile-nav-item {{ request()->routeIs('inquiries.*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="bi bi-envelope-paper"></i></span>
+                    <span class="nav-label">Inquiries</span>
+                </a>
+                <a href="{{ route('reports.index') }}" class="mobile-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                    <span class="nav-label">Reports</span>
+                </a>
+            @endif
+        </div>
+    @endif
 
     @if(!request()->routeIs('chat.*'))
         <!-- Floating Chat Action Button on Mobile -->

@@ -241,10 +241,11 @@ class MainActivity : Activity() {
                 // Workaround for Google OAuth "disallowed_useragent" error inside WebViews:
                 // We modify the User-Agent to remove "; wv" and the "Version/x.x" string,
                 // which lets Google identify this WebView as a standard mobile Chrome browser.
+                // We also append " MerasUserApp/1.0" to allow robust backend detection.
                 val defaultUserAgent = userAgentString
                 val customUserAgent = defaultUserAgent
                     .replace("; wv", "")
-                    .replace(Regex("Version/[0-9.]+\\s"), "")
+                    .replace(Regex("Version/[0-9.]+\\s"), "") + " MerasUserApp/1.0"
                 userAgentString = customUserAgent
             }
 
