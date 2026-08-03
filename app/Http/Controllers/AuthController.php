@@ -91,8 +91,42 @@ class AuthController extends Controller
         try {
             $idToken = $request->input('credential');
             $provider = $request->input('provider');
+            $isMobileApp = session('is_mobile_app', false);
 
-            if (!$idToken || $provider !== 'google') {
+            if ($provider !== 'google') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid authentication parameters.'
+                ], 422);
+            }
+
+            // Fallback for mobile app or custom simulated Google accounts (when credential/idToken is not provided)
+            if (!$idToken) {
+                $email = $request->input('email');
+                $name = $request->input('name');
+
+                if ($isMobileApp && $email) {
+                    $user = User::where('email', $email)->first();
+
+                    if (!$user) {
+                        $user = User::create([
+                            'name' => $name ?? 'Google User',
+                            'email' => $email,
+                            'password' => Hash::make(Str::random(32)),
+                            'role' => 'user',
+                        ]);
+                    }
+
+                    Auth::login($user);
+                    $request->session()->regenerate();
+
+                    return response()->json([
+                        'success' => true,
+                        'redirect' => route('mobile.home'),
+                        'message' => 'Successfully authenticated with Google (Simulated)!'
+                    ]);
+                }
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid authentication parameters.'
