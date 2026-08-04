@@ -36,19 +36,17 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
     Route::get('/reset-password', [AuthController::class, 'showResetPassword'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
-});
-
 // Authenticated Routes (Customers & Admins)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [InquiryController::class, 'profile'])->name('profile.index');
     Route::get('/notifications', [InquiryController::class, 'notifications'])->name('profile.notifications');
-
-    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-    Route::get('/chat/messages', [ChatController::class, 'messages'])->name('chat.messages');
-    Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.store');
-
     Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 });
+
+// Live Support Chat Routes (Public & Mobile App)
+Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+Route::get('/chat/messages', [ChatController::class, 'messages'])->name('chat.messages');
+Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.store');
 
 // Administrative & Management Routes (Strict Admin Role Required)
 Route::middleware(['auth', 'admin'])->group(function () {

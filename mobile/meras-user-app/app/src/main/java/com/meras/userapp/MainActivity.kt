@@ -545,9 +545,22 @@ class MainActivity : AppCompatActivity() {
     private fun hideStaffControls(view: WebView) {
         view.evaluateJavascript(
             """
-            document.querySelectorAll('.btn-app-download').forEach(function (item) {
-                item.style.display = 'none';
-            });
+            (function() {
+                // Hide all app-download buttons (web version download prompts) 
+                // since the user already has the app installed
+                var selectors = [
+                    '.btn-app-download',
+                    '.btn-app-download-hero',
+                    '.btn-app-download-footer',
+                    'a[href*="/download/android-app"]',
+                    'a[href*="meras-user-app"]'
+                ];
+                selectors.forEach(function(sel) {
+                    document.querySelectorAll(sel).forEach(function(el) {
+                        el.style.display = 'none';
+                    });
+                });
+            })();
             """.trimIndent(),
             null
         )

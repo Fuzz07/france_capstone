@@ -12,8 +12,12 @@ class HomeController extends Controller
             session(['fcm_token' => request()->query('fcm_token')]);
         }
 
+        $isMobileApp = $this->isMobileApp();
+
         return view('home.index', [
             'products' => $this->catalogProducts(),
+            'hideAppDownload' => $isMobileApp ?: null,
+            'hideStaffLinks' => $isMobileApp ?: null,
         ]);
     }
 
@@ -31,6 +35,12 @@ class HomeController extends Controller
             'hideAppDownload' => true,
             'inquirySource' => 'mobile',
         ]);
+    }
+
+    private function isMobileApp(): bool
+    {
+        return session('is_mobile_app', false)
+            || str_contains(request()->userAgent() ?? '', 'MerasUserApp');
     }
 
     private function catalogProducts()
