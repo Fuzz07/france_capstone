@@ -2,18 +2,28 @@ package com.meras.userapp
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.DownloadManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.CookieManager
+import android.webkit.PermissionRequest
+import android.webkit.URLUtil
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -22,12 +32,19 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.firebase.messaging.FirebaseMessaging
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var progressBar: ProgressBar
     private lateinit var offlineView: View
     private lateinit var bottomNav: LinearLayout
     private lateinit var fabChatbot: View
@@ -36,10 +53,35 @@ class MainActivity : Activity() {
     private val customerUrl: String by lazy { getString(R.string.customer_url) }
     private var fcmToken: String? = null
     
+    // File upload callback support for WebViews
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+
+    private val fileChooserLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (filePathCallback == null) return@registerForActivityResult
+        
+        var results: Array<Uri>? = null
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            if (data != null) {
+                val dataString = data.dataString
+                val clipData = data.clipData
+                if (clipData != null) {
+                    results = Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
+                } else if (dataString != null) {
+                    results = arrayOf(Uri.parse(dataString))
+                }
+            }
+        }
+        filePathCallback?.onReceiveValue(results)
+        filePathCallback = null
+    }
+
     // Tab Views
     private val tabViews = ArrayList<LinearLayout>()
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -53,6 +95,20 @@ class MainActivity : Activity() {
                 )
             }
 
+            // Top Horizontal Loading Progress Bar
+            progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dpToPx(3)
+                )
+                progressDrawable.setColorFilter(
+                    Color.parseColor("#4f46e5"),
+                    android.graphics.PorterDuff.Mode.SRC_IN
+                )
+                visibility = View.GONE
+            }
+            mainLayout.addView(progressBar)
+
             // Main content area
             val contentFrame = FrameLayout(this).apply {
                 layoutParams = LinearLayout.LayoutParams(
@@ -62,13 +118,40 @@ class MainActivity : Activity() {
                 )
             }
 
+            // Pull-To-Refresh Layout
+            swipeRefreshLayout = SwipeRefreshLayout(this).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                setColorSchemeColors(Color.parseColor("#4f46e5"))
+                setOnRefreshListener {
+                    if (isNetworkAvailable()) {
+                        webView.reload()
+                    } else {
+                        isRefreshing = false
+                        Toast.makeText(this@MainActivity, "No internet connection", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
             webView = WebView(this)
+
+            // Disable SwipeRefresh when WebView is scrolled down
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                webView.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                    swipeRefreshLayout.isEnabled = (scrollY == 0)
+                }
+            }
+
             offlineView = createOfflineView()
 
-            contentFrame.addView(webView, FrameLayout.LayoutParams(
+            swipeRefreshLayout.addView(webView, ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             ))
+
+            contentFrame.addView(swipeRefreshLayout)
             contentFrame.addView(offlineView, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -81,18 +164,21 @@ class MainActivity : Activity() {
                     0,
                     1.0f
                 )
-                settings.apply {
-                    javaScriptEnabled = true
-                    domStorageEnabled = true
-                    databaseEnabled = true
-                    loadsImagesAutomatically = true
-                    cacheMode = WebSettings.LOAD_DEFAULT
-                    mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-                }
+                setupWebViewSettings(this)
                 
                 webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                         return handleNavigation(request.url)
+                    }
+                }
+
+                webChromeClient = object : WebChromeClient() {
+                    override fun onShowFileChooser(
+                        webView: WebView?,
+                        filePathCallback: ValueCallback<Array<Uri>>?,
+                        fileChooserParams: FileChooserParams?
+                    ): Boolean {
+                        return handleFileChooser(filePathCallback, fileChooserParams)
                     }
                 }
             }
@@ -104,7 +190,7 @@ class MainActivity : Activity() {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     dpToPx(56)
                 )
-                setBackgroundColor(Color.parseColor("#4f46e5")) // Indigo matching FAB
+                setBackgroundColor(Color.parseColor("#4f46e5"))
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dpToPx(16), 0, dpToPx(16), 0)
 
@@ -141,18 +227,16 @@ class MainActivity : Activity() {
                 })
             }
 
-            // Combined Chat Overlay Container (Card/Sheet design)
+            // Combined Chat Overlay Container
             chatOverlay = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 ).apply {
-                    // Modern sheet: leaves a subtle margin at the top so users see where they came from
                     topMargin = dpToPx(50)
                 }
                 
-                // Rounded top corners and white background
                 val roundedBg = GradientDrawable().apply {
                     setColor(Color.WHITE)
                     val r = dpToPx(16).toFloat()
@@ -162,7 +246,7 @@ class MainActivity : Activity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     elevation = dpToPx(12).toFloat()
                 }
-                visibility = View.GONE // Hidden initially
+                visibility = View.GONE
 
                 addView(chatHeader)
                 addView(chatWebView)
@@ -180,7 +264,6 @@ class MainActivity : Activity() {
                     setMargins(0, 0, dpToPx(16), dpToPx(16))
                 }
                 
-                // Indigo circular background
                 val shape = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
                     setColor(Color.parseColor("#4f46e5"))
@@ -189,10 +272,10 @@ class MainActivity : Activity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     elevation = dpToPx(6).toFloat()
                 }
-                visibility = View.GONE // Initially hidden, shown upon login check
+                visibility = View.GONE
                 
                 addView(TextView(this@MainActivity).apply {
-                    text = "💬" // Chatbot bubble icon
+                    text = "💬"
                     textSize = 24f
                     gravity = Gravity.CENTER
                     layoutParams = FrameLayout.LayoutParams(
@@ -221,32 +304,45 @@ class MainActivity : Activity() {
 
             setContentView(mainLayout)
 
-            // Enable Cookies and third-party cookies for Google Sign-In
-            android.webkit.CookieManager.getInstance().apply {
+            // Enable Cookies
+            CookieManager.getInstance().apply {
                 setAcceptCookie(true)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     setAcceptThirdPartyCookies(webView, true)
                 }
             }
 
-            webView.settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                databaseEnabled = true
-                loadsImagesAutomatically = true
-                cacheMode = WebSettings.LOAD_DEFAULT
-                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-                setSupportZoom(false)
+            setupWebViewSettings(webView)
 
-                // Workaround for Google OAuth "disallowed_useragent" error inside WebViews:
-                // We modify the User-Agent to remove "; wv" and the "Version/x.x" string,
-                // which lets Google identify this WebView as a standard mobile Chrome browser.
-                // We also append " MerasUserApp/1.0" to allow robust backend detection.
-                val defaultUserAgent = userAgentString
-                val customUserAgent = defaultUserAgent
-                    .replace("; wv", "")
-                    .replace(Regex("Version/[0-9.]+\\s"), "") + " MerasUserApp/1.0"
-                userAgentString = customUserAgent
+            // Attach Download Listeners
+            webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+                downloadFile(url, userAgent, contentDisposition, mimeType)
+            }
+            chatWebView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+                downloadFile(url, userAgent, contentDisposition, mimeType)
+            }
+
+            webView.webChromeClient = object : WebChromeClient() {
+                override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                    if (newProgress < 100) {
+                        progressBar.visibility = View.VISIBLE
+                        progressBar.progress = newProgress
+                    } else {
+                        progressBar.visibility = View.GONE
+                    }
+                }
+
+                override fun onShowFileChooser(
+                    webView: WebView?,
+                    filePathCallback: ValueCallback<Array<Uri>>?,
+                    fileChooserParams: FileChooserParams?
+                ): Boolean {
+                    return handleFileChooser(filePathCallback, fileChooserParams)
+                }
+
+                override fun onPermissionRequest(request: PermissionRequest?) {
+                    request?.grant(request.resources)
+                }
             }
 
             webView.webViewClient = object : WebViewClient() {
@@ -255,19 +351,17 @@ class MainActivity : Activity() {
                 }
 
                 override fun onPageFinished(view: WebView, url: String) {
+                    swipeRefreshLayout.isRefreshing = false
                     offlineView.visibility = View.GONE
                     hideStaffControls(view)
                     
-                    // Flush cookies to disk so they persist across app restarts
-                    android.webkit.CookieManager.getInstance().flush()
+                    CookieManager.getInstance().flush()
                     
-                    // Evaluate login state from web app to hide/show bottom navigation dynamically
                     view.evaluateJavascript("window.isLoggedIn") { value ->
                         val cleanValue = value?.replace("\"", "")?.trim()
                         val isLoggedIn = cleanValue == "true"
                         if (isLoggedIn) {
                             bottomNav.visibility = View.VISIBLE
-                            // Hide the chatbot FAB if they are already on the chat page
                             if (url.contains("/chat")) {
                                 fabChatbot.visibility = View.GONE
                             } else {
@@ -288,24 +382,126 @@ class MainActivity : Activity() {
                     error: WebResourceError
                 ) {
                     if (request.isForMainFrame) {
-                        offlineView.visibility = View.VISIBLE
+                        swipeRefreshLayout.isRefreshing = false
+                        if (!isNetworkAvailable()) {
+                            offlineView.visibility = View.VISIBLE
+                        }
                     }
                 }
             }
 
-            // Request Notification Permission on Android 13+
+            // Modern Android Back Navigation handler
+            onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (::chatOverlay.isInitialized && chatOverlay.visibility == View.VISIBLE) {
+                        if (chatWebView.canGoBack()) {
+                            chatWebView.goBack()
+                        } else {
+                            chatOverlay.visibility = View.GONE
+                            chatWebView.onPause()
+                        }
+                    } else if (webView.canGoBack()) {
+                        webView.goBack()
+                    } else {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                }
+            })
+
+            // Notification Permission
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                     requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
                 }
             }
 
-            // Fetch Firebase Token and load URL
             fetchFcmTokenAndLoad(savedInstanceState)
 
         } catch (t: Throwable) {
             Toast.makeText(this, "Startup error: ${t.message}", Toast.LENGTH_LONG).show()
             t.printStackTrace()
+        }
+    }
+
+    private fun setupWebViewSettings(targetWebView: WebView) {
+        targetWebView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            databaseEnabled = true
+            loadsImagesAutomatically = true
+            cacheMode = WebSettings.LOAD_DEFAULT
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            setSupportZoom(false)
+            allowFileAccess = true
+            allowContentAccess = true
+            useWideViewPort = true
+            loadWithOverviewMode = true
+            mediaPlaybackRequiresUserGesture = false
+
+            val defaultUserAgent = userAgentString
+            val customUserAgent = defaultUserAgent
+                .replace("; wv", "")
+                .replace(Regex("Version/[0-9.]+\\s"), "") + " MerasUserApp/1.0"
+            userAgentString = customUserAgent
+        }
+    }
+
+    private fun handleFileChooser(
+        filePathCallback: ValueCallback<Array<Uri>>?,
+        fileChooserParams: WebChromeClient.FileChooserParams?
+    ): Boolean {
+        this.filePathCallback?.onReceiveValue(null)
+        this.filePathCallback = filePathCallback
+
+        val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+        }
+
+        try {
+            fileChooserLauncher.launch(intent)
+        } catch (e: ActivityNotFoundException) {
+            this.filePathCallback = null
+            Toast.makeText(this, "Cannot open file chooser", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
+    }
+
+    private fun downloadFile(url: String, userAgent: String, contentDisposition: String, mimeType: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(url)).apply {
+                setMimeType(mimeType)
+                addRequestHeader("User-Agent", userAgent)
+                addRequestHeader("Cookie", CookieManager.getInstance().getCookie(url))
+                setDescription("Downloading file...")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+                setTitle(fileName)
+                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            }
+            val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            Toast.makeText(this, "Downloading file...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val nw = connectivityManager.activeNetwork ?: return false
+            val actNw = connectivityManager.getNetworkCapabilities(nw) ?: return false
+            return actNw.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                   actNw.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                   actNw.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+        } else {
+            @Suppress("DEPRECATION")
+            val nwInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION")
+            return nwInfo != null && nwInfo.isConnected
         }
     }
 
@@ -337,9 +533,14 @@ class MainActivity : Activity() {
     }
 
     private fun handleNavigation(uri: Uri): Boolean {
-        val scheme = uri.scheme.orEmpty()
-        if (scheme == "mailto" || scheme == "tel") {
-            startActivity(Intent(Intent.ACTION_VIEW, uri))
+        val scheme = uri.scheme.orEmpty().lowercase()
+        if (scheme != "http" && scheme != "https") {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, uri)
+                startActivity(intent)
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(this, "No application found to handle action", Toast.LENGTH_SHORT).show()
+            }
             return true
         }
 
@@ -366,9 +567,8 @@ class MainActivity : Activity() {
             )
             setBackgroundColor(Color.WHITE)
             gravity = Gravity.CENTER_VERTICAL
-            visibility = View.GONE // Initially hidden to avoid flickering before page finished load
+            visibility = View.GONE
             
-            // Add a thin top border shadow
             val border = GradientDrawable().apply {
                 setColor(Color.WHITE)
                 setStroke(dpToPx(1), Color.parseColor("#e2e8f0"))
@@ -397,7 +597,6 @@ class MainActivity : Activity() {
                 setPadding(0, dpToPx(6), 0, dpToPx(6))
                 isClickable = true
                 
-                // Add a simple Ripple effect or background selector
                 val outValue = TypedValue()
                 theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
                 setBackgroundResource(outValue.resourceId)
@@ -409,13 +608,13 @@ class MainActivity : Activity() {
 
             val iconView = TextView(this).apply {
                 text = tab.icon
-                textSize = 21f // Slightly bigger for better UI
+                textSize = 21f
                 gravity = Gravity.CENTER
             }
 
             val titleView = TextView(this).apply {
                 text = tab.title
-                textSize = 11f // Slightly bigger for better UI
+                textSize = 11f
                 setTextColor(Color.parseColor("#64748b"))
                 gravity = Gravity.CENTER
                 setPadding(0, dpToPx(2), 0, 0)
@@ -445,8 +644,8 @@ class MainActivity : Activity() {
     }
 
     private fun highlightActiveTab(url: String) {
-        val activeColor = Color.parseColor("#4f46e5") // Indigo
-        val inactiveColor = Color.parseColor("#64748b") // Gray
+        val activeColor = Color.parseColor("#4f46e5")
+        val inactiveColor = Color.parseColor("#64748b")
 
         val activeTabId = when {
             url.contains("/profile") -> "profile"
@@ -518,27 +717,12 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
-        android.webkit.CookieManager.getInstance().flush()
+        CookieManager.getInstance().flush()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         webView.saveState(outState)
-    }
-
-    override fun onBackPressed() {
-        if (::chatOverlay.isInitialized && chatOverlay.visibility == View.VISIBLE) {
-            if (chatWebView.canGoBack()) {
-                chatWebView.goBack()
-            } else {
-                chatOverlay.visibility = View.GONE
-                chatWebView.onPause()
-            }
-        } else if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
-        }
     }
 
     private data class TabItem(val icon: String, val title: String, val id: String)
