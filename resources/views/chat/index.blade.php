@@ -1,3 +1,7 @@
+@php
+    $isMobileApp = session('is_mobile_app', false) || (isset($_SERVER['HTTP_USER_AGENT']) && str_contains($_SERVER['HTTP_USER_AGENT'], 'MerasUserApp'));
+@endphp
+
 @extends('layouts.app')
 
 @section('title', 'Customer Support Chat')
@@ -9,16 +13,104 @@
         .page-header {
             display: none !important;
         }
+        
         .chat-workspace-card {
-            height: calc(100vh - 90px) !important;
-            min-height: 400px !important;
+            /* Full viewport height inside mobile app / mobile web */
+            height: 100vh !important;
+            min-height: 100vh !important;
+            max-height: 100vh !important;
             border-radius: 0 !important; /* Full bleed layout on mobile */
             border: none !important;
+            margin: 0 !important;
         }
+        
         .chat-layout {
             gap: 0 !important;
         }
+
+        .chat-box {
+            padding: 12px 14px !important;
+            gap: 12px !important;
+            background-color: #f8fafc !important; /* Clean premium slate grey background */
+        }
+
+        .chat-message {
+            max-width: 90% !important;
+            gap: 8px !important;
+        }
+
+        .chat-bubble {
+            padding: 10px 14px !important;
+            font-size: 0.88rem !important;
+            line-height: 1.4 !important;
+            border-radius: 16px !important;
+        }
+
+        .chat-bubble-own {
+            border-bottom-right-radius: 4px !important;
+        }
+
+        .chat-bubble-other {
+            border-bottom-left-radius: 4px !important;
+        }
+
+        .chat-quick-replies {
+            padding: 8px 12px !important;
+            background-color: #ffffff !important;
+            border-top: 1px solid #f1f5f9 !important;
+            gap: 6px !important;
+        }
+
+        .chat-quick-btn {
+            background-color: #f1f5f9 !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #334155 !important;
+            border-radius: 999px !important;
+            padding: 6px 12px !important;
+            font-size: 0.78rem !important;
+            font-weight: 500 !important;
+            box-shadow: none !important;
+            transition: all 0.15s ease-in-out !important;
+        }
+
+        .chat-quick-btn:active {
+            background-color: #cbd5e1 !important;
+            transform: scale(0.95) !important;
+        }
+
+        .chat-input-wrapper {
+            border-radius: 24px !important; /* Elegant rounded capsule input */
+            padding: 6px 14px !important;
+            border-color: #cbd5e1 !important;
+            background-color: #ffffff !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .chat-input-wrapper:focus-within {
+            border-color: #4f46e5 !important;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12) !important;
+        }
+
+        .chat-send-btn {
+            border-radius: 50% !important;
+            width: 32px !important;
+            height: 32px !important;
+            background-color: #4f46e5 !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .chat-send-btn:active {
+            transform: scale(0.88) !important;
+            background-color: #3730a3 !important;
+        }
     }
+
+    /* Hide the redundant web header inside the native mobile APK WebView container */
+    @if($isMobileApp)
+        .chat-panel-header {
+            display: none !important;
+        }
+    @endif
 </style>
 
 @if(!auth()->check() || auth()->user()->role === 'user')
