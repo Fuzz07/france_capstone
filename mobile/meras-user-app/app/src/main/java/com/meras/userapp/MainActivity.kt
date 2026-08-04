@@ -268,9 +268,17 @@ class MainActivity : AppCompatActivity() {
                     shape = GradientDrawable.OVAL
                     setColor(Color.parseColor("#4f46e5"))
                 }
-                background = shape
+                
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    val ripple = android.graphics.drawable.RippleDrawable(
+                        android.content.res.ColorStateList.valueOf(Color.argb(70, 255, 255, 255)),
+                        shape,
+                        null
+                    )
+                    background = ripple
                     elevation = dpToPx(6).toFloat()
+                } else {
+                    background = shape
                 }
                 visibility = View.GONE
                 

@@ -186,6 +186,8 @@
         </main>
     </div>
     <script>
+        window.isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+
         const burgerBtn = document.getElementById('burgerBtn');
         const appSidebar = document.getElementById('appSidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -307,7 +309,7 @@
         </div>
     @endif
 
-    @if(!request()->routeIs('chat.*'))
+    @if(!request()->routeIs('chat.*') && !$isMobileApp)
         <!-- Floating Chat Action Button on Mobile -->
         <a href="{{ route('chat.index') }}" class="mobile-chat-fab" title="Open Conversation">
             <i class="bi bi-chat-dots-fill"></i>

@@ -132,8 +132,13 @@
                 <div class="chat-heading-wrap">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     <div>
-                        <h3>Team Conversation</h3>
-                        <p>{{ $messagesToday }} today | {{ $totalMessages }} total</p>
+                        @if(auth()->user()->role === 'user')
+                            <h3>💬 Mera's Support Assistant</h3>
+                            <p>Ask us anything! • Online</p>
+                        @else
+                            <h3>Team Conversation</h3>
+                            <p>{{ $messagesToday }} today | {{ $totalMessages }} total</p>
+                        @endif
                     </div>
                 </div>
                 <button type="button" class="chat-clear-btn" onclick="clearInput()" title="Clear input">
@@ -170,19 +175,31 @@
             </div>
 
             <div class="chat-quick-replies" id="quickReplies">
-                <span class="chat-quick-label">Quick replies:</span>
-                <button type="button" class="chat-quick-btn" onclick="setMsg('Hello! How can I help you today?')">Hello</button>
-                <button type="button" class="chat-quick-btn" onclick="setMsg('The product you are looking for is available in store.')">Available</button>
-                <button type="button" class="chat-quick-btn" onclick="setMsg('Sorry, that item is currently out of stock.')">Out of Stock</button>
-                <button type="button" class="chat-quick-btn" onclick="setMsg('Our store hours are Monday to Saturday, 8 AM to 6 PM.')">Hours</button>
-                <button type="button" class="chat-quick-btn" onclick="setMsg('Please visit us at Stall No. 18, Bantayan Public Market.')">Address</button>
+                @if(auth()->user()->role === 'user')
+                    <span class="chat-quick-label">Frequently Asked:</span>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('What are your store hours?')">Store Hours 🕒</button>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('Where is your store located?')">Location 📍</button>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('What products do you have in stock?')">Products 🛍️</button>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('What payment methods do you accept?')">Payment 💳</button>
+                @else
+                    <span class="chat-quick-label">Quick replies:</span>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('Hello! How can I help you today?')">Hello</button>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('The product you are looking for is available in store.')">Available</button>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('Sorry, that item is currently out of stock.')">Out of Stock</button>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('Our store hours are Monday to Saturday, 8 AM to 6 PM.')">Hours</button>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('Please visit us at Stall No. 18, Bantayan Public Market.')">Address</button>
+                @endif
             </div>
 
             <form id="msgForm" method="POST" action="{{ route('chat.store') }}" class="chat-input-form">
                 @csrf
                 <input id="user_name" type="hidden" name="user_name" value="{{ auth()->user()->name }}">
                 <div class="chat-input-wrapper">
-                    <textarea id="msgInput" name="message" placeholder="Type a team note or customer reply draft..." rows="1" autocomplete="off" required></textarea>
+                    @if(auth()->user()->role === 'user')
+                        <textarea id="msgInput" name="message" placeholder="Ask about products, store hours, location..." rows="1" autocomplete="off" required></textarea>
+                    @else
+                        <textarea id="msgInput" name="message" placeholder="Type a team note or customer reply draft..." rows="1" autocomplete="off" required></textarea>
+                    @endif
                     <button type="submit" class="chat-send-btn" id="sendBtn" title="Send message">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                     </button>
