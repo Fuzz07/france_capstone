@@ -15,13 +15,21 @@
         }
         
         .chat-workspace-card {
-            /* Full viewport height inside mobile app / mobile web */
-            height: 100vh !important;
-            min-height: 100vh !important;
-            max-height: 100vh !important;
+            /* Bulletproof fixed full-bleed layout for mobile WebViews */
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
             border-radius: 0 !important; /* Full bleed layout on mobile */
             border: none !important;
             margin: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background-color: #f8fafc !important;
+            z-index: 9999 !important;
         }
         
         .chat-layout {
@@ -33,6 +41,8 @@
             gap: 12px !important;
             background-color: #f8fafc !important; /* Clean premium slate grey background */
             -webkit-overflow-scrolling: touch !important; /* Kinetic inertia scroll */
+            flex: 1 !important;
+            overflow-y: auto !important;
         }
 
         .chat-message {
@@ -121,6 +131,12 @@
     @if($isMobileApp)
         .chat-panel-header {
             display: none !important;
+        }
+        html, body {
+            overflow: hidden !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
     @endif
 </style>
