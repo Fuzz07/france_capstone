@@ -264,9 +264,12 @@ class MainActivity : AppCompatActivity() {
                     setMargins(0, 0, dpToPx(16), dpToPx(16))
                 }
                 
-                val shape = GradientDrawable().apply {
+                // Replicate browser gradient background (linear 135deg top-left to bottom-right)
+                val shape = GradientDrawable(
+                    GradientDrawable.Orientation.TL_BR,
+                    intArrayOf(Color.parseColor("#4f46e5"), Color.parseColor("#3730a3"))
+                ).apply {
                     shape = GradientDrawable.OVAL
-                    setColor(Color.parseColor("#4f46e5"))
                 }
                 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -282,10 +285,11 @@ class MainActivity : AppCompatActivity() {
                 }
                 visibility = View.GONE
                 
-                addView(TextView(this@MainActivity).apply {
-                    text = "💬"
-                    textSize = 24f
-                    gravity = Gravity.CENTER
+                // Replicate browser's sleek vector icon instead of a basic text emoji
+                addView(android.widget.ImageView(this@MainActivity).apply {
+                    setImageResource(R.drawable.ic_chatbot)
+                    scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+                    setPadding(dpToPx(14), dpToPx(14), dpToPx(14), dpToPx(14))
                     layoutParams = FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
