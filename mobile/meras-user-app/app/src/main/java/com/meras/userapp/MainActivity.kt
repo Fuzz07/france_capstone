@@ -297,13 +297,56 @@ class MainActivity : AppCompatActivity() {
                 })
 
                 setOnClickListener {
-                    val rootBaseUrl = customerUrl.substringBefore("/user-app").substringBefore("?")
-                    val chatUrl = getFinalUrlWithToken("$rootBaseUrl/chat")
-                    
-                    chatWebView.onResume()
-                    chatWebView.loadUrl(chatUrl)
-                    chatOverlay.visibility = View.VISIBLE
+                    openChatSupport()
                 }
+
+                setOnTouchListener(object : View.OnTouchListener {
+                    private var dX = 0f
+                    private var dY = 0f
+                    private var initialX = 0f
+                    private var initialY = 0f
+                    private var isMoving = false
+                    private val CLICK_DRAG_TOLERANCE = 10f
+
+                    @SuppressLint("ClickableViewAccessibility")
+                    override fun onTouch(view: View, event: android.view.MotionEvent): Boolean {
+                        when (event.action) {
+                            android.view.MotionEvent.ACTION_DOWN -> {
+                                dX = view.x - event.rawX
+                                dY = view.y - event.rawY
+                                initialX = view.x
+                                initialY = view.y
+                                isMoving = false
+                            }
+                            android.view.MotionEvent.ACTION_MOVE -> {
+                                val newX = event.rawX + dX
+                                val newY = event.rawY + dY
+                                
+                                val parent = view.parent as ViewGroup
+                                val parentWidth = parent.width
+                                val parentHeight = parent.height
+                                
+                                val boundedX = Math.max(0f, Math.min(newX, (parentWidth - view.width).toFloat()))
+                                val boundedY = Math.max(0f, Math.min(newY, (parentHeight - view.height).toFloat()))
+                                
+                                view.x = boundedX
+                                view.y = boundedY
+                                
+                                if (Math.abs(view.x - initialX) > CLICK_DRAG_TOLERANCE || Math.abs(view.y - initialY) > CLICK_DRAG_TOLERANCE) {
+                                    isMoving = true
+                                }
+                            }
+                            android.view.MotionEvent.ACTION_UP -> {
+                                if (!isMoving) {
+                                    openChatSupport()
+                                } else {
+                                    view.performClick()
+                                }
+                            }
+                        }
+                        return true
+                    }
+                })
             }
 
             contentFrame.addView(fabChatbot)
@@ -429,6 +472,15 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Startup error: ${t.message}", Toast.LENGTH_LONG).show()
             t.printStackTrace()
         }
+    }
+
+    private fun openChatSupport() {
+        val rootBaseUrl = customerUrl.substringBefore("/user-app").substringBefore("?")
+        val chatUrl = getFinalUrlWithToken("$rootBaseUrl/chat")
+        
+        chatWebView.onResume()
+        chatWebView.loadUrl(chatUrl)
+        chatOverlay.visibility = View.VISIBLE
     }
 
     private fun setupWebViewSettings(targetWebView: WebView) {
