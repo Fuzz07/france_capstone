@@ -32,6 +32,7 @@
             padding: 12px 14px !important;
             gap: 12px !important;
             background-color: #f8fafc !important; /* Clean premium slate grey background */
+            -webkit-overflow-scrolling: touch !important; /* Kinetic inertia scroll */
         }
 
         .chat-message {
@@ -55,20 +56,31 @@
         }
 
         .chat-quick-replies {
-            padding: 8px 12px !important;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important; /* Single horizontal line strip */
+            overflow-x: auto !important; /* Enable swiping horizontally */
+            -webkit-overflow-scrolling: touch !important; /* Fluid swipe scrolling */
+            padding: 10px 12px !important;
             background-color: #ffffff !important;
             border-top: 1px solid #f1f5f9 !important;
-            gap: 6px !important;
+            gap: 8px !important;
+            scrollbar-width: none !important; /* Hide scrollbar on Firefox */
+        }
+
+        .chat-quick-replies::-webkit-scrollbar {
+            display: none !important; /* Hide scrollbar on Safari/Chrome */
         }
 
         .chat-quick-btn {
+            flex-shrink: 0 !important; /* Prevent squishing of text */
             background-color: #f1f5f9 !important;
             border: 1px solid #e2e8f0 !important;
             color: #334155 !important;
             border-radius: 999px !important;
-            padding: 6px 12px !important;
+            padding: 6px 14px !important;
             font-size: 0.78rem !important;
-            font-weight: 500 !important;
+            font-weight: 600 !important;
             box-shadow: none !important;
             transition: all 0.15s ease-in-out !important;
         }
@@ -352,26 +364,68 @@ function insertResponseTemplate(button) {
     target.focus();
 }
 
+const form = document.getElementById('msgForm');
 const textarea = document.getElementById('msgInput');
+
+// Asynchronous AJAX Message Submission (Responsive and Instant, No Page Reload)
+if (form) {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const input = document.getElementById('msgInput');
+        const message = input.value.trim();
+        if (!message) return;
+        
+        const formData = new FormData(form);
+        
+        // Optimistically clear and resize input instantly for snappy experience
+        input.value = '';
+        input.style.height = '';
+        input.focus();
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(() => {
+            // Instantly refresh message list with zero lag
+            refreshMessages(true);
+        })
+        .catch(err => {
+            console.error('Error sending message:', err);
+        });
+    });
+}
+
 if (textarea) {
     textarea.addEventListener('input', () => autoResize(textarea));
     textarea.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             if (this.value.trim()) {
-                document.getElementById('msgForm').submit();
+                form.dispatchEvent(new Event('submit'));
             }
         }
     });
+
+    // Android/Mobile responsiveness: Auto-scroll when keyboard focuses to keep input visible
+    textarea.addEventListener('focus', () => {
+        setTimeout(scrollToBottom, 250);
+    });
 }
 
-setInterval(function() {
+function refreshMessages(forceScrollToBottom = false) {
     fetch('{{ route("chat.messages") }}')
         .then(response => response.json())
         .then(messages => {
             const box = document.getElementById('chatbox');
+            if (!box) return;
+            
             const authUser = @json(auth()->check() ? auth()->user()->name : 'Guest');
-            const wasAtBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 10;
+            const wasAtBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 12;
 
             if (!messages.length) {
                 box.innerHTML = '<div class="chat-empty"><p>No messages yet. Start the conversation.</p></div>';
@@ -396,9 +450,17 @@ setInterval(function() {
                     </div>`;
             }).join('');
 
-            if (wasAtBottom) scrollToBottom();
+            if (wasAtBottom || forceScrollToBottom) {
+                scrollToBottom();
+            }
         })
         .catch(() => {});
-}, 5000);
+}
+
+// Perform initial load
+refreshMessages(true);
+
+// Poll for updates every 4 seconds for a snappier, real-time feel
+setInterval(refreshMessages, 4000);
 </script>
 @endpush
