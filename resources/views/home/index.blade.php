@@ -215,62 +215,46 @@
             </div>
 
             <div class="inquiry-form-card">
-                @if(Auth::check())
-                    <form method="POST" action="{{ route('inquiries.store') }}">
-                        @csrf
-                        @if(!empty($inquirySource))
-                            <input type="hidden" name="source" value="{{ $inquirySource }}">
-                        @endif
+                <form method="POST" action="{{ route('inquiries.store') }}">
+                    @csrf
+                    @if(!empty($inquirySource))
+                        <input type="hidden" name="source" value="{{ $inquirySource }}">
+                    @endif
 
-                        <div class="form-group" style="margin-bottom: 24px;">
-                            <label for="customerName">Your Full Name</label>
-                            <input type="text" name="customer_name" id="customerName" class="form-control-lp" required
-                                placeholder="Juan Dela Cruz" value="{{ Auth::user()->name }}" readonly
-                                style="background-color: #f1f5f9; cursor: not-allowed;">
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 24px;">
-                            <label for="customerEmail">Email Address</label>
-                            <input type="email" name="customer_email" id="customerEmail" class="form-control-lp" required
-                                placeholder="juan@gmail.com" value="{{ Auth::user()->email }}" readonly
-                                style="background-color: #f1f5f9; cursor: not-allowed;">
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 24px;">
-                            <label for="subject">Subject</label>
-                            <input type="text" name="subject" id="subject"
-                                class="form-control-lp @error('subject') error @enderror" required
-                                placeholder="e.g. Bulk school supplies quote" value="{{ old('subject') }}">
-                            @error('subject')<small style="color: var(--lp-danger);">{{ $message }}</small>@enderror
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 32px;">
-                            <label for="message">Your Inquiry Message</label>
-                            <textarea name="message" id="message" rows="5"
-                                class="form-control-lp @error('message') error @enderror" required
-                                placeholder="Describe what products or fabric swatches you'd like details on...">{{ old('message') }}</textarea>
-                            @error('message')<small style="color: var(--lp-danger);">{{ $message }}</small>@enderror
-                        </div>
-
-                        <button type="submit" class="btn-submit-lp" style="width:100%;">
-                            📧 Send Inquiry Message
-                        </button>
-                    </form>
-                @else
-                    <div style="text-align: center; padding: 40px 20px;">
-                        <div style="font-size: 48px; margin-bottom: 20px;">🔒</div>
-                        <h3 style="font-size: 20px; font-weight: bold; margin-bottom: 12px; color: #1e293b;">Inquiries
-                            Restricted</h3>
-                        <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin-bottom: 24px;">
-                            You must log in or register a customer account to inquire about products or send messages to our
-                            support team.
-                        </p>
-                        <a href="{{ route('login') }}" class="btn-submit-lp"
-                            style="display: inline-block; text-decoration: none; width: auto; padding: 12px 30px; border-radius: 6px; text-align: center; box-sizing: border-box; font-weight: bold;">
-                            🔑 Log In / Register
-                        </a>
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="customerName">Your Full Name</label>
+                        <input type="text" name="customer_name" id="customerName" class="form-control-lp" required
+                            placeholder="Juan Dela Cruz" value="{{ Auth::check() ? Auth::user()->name : old('customer_name') }}"
+                            {{ Auth::check() ? 'readonly style=background-color:#f1f5f9;cursor:not-allowed;' : '' }}>
                     </div>
-                @endif
+
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="customerEmail">Email Address</label>
+                        <input type="email" name="customer_email" id="customerEmail" class="form-control-lp" required
+                            placeholder="juan@gmail.com" value="{{ Auth::check() ? Auth::user()->email : old('customer_email') }}"
+                            {{ Auth::check() ? 'readonly style=background-color:#f1f5f9;cursor:not-allowed;' : '' }}>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="subject">Subject</label>
+                        <input type="text" name="subject" id="subject"
+                            class="form-control-lp @error('subject') error @enderror" required
+                            placeholder="e.g. Bulk school supplies quote" value="{{ old('subject') }}">
+                        @error('subject')<small style="color: var(--lp-danger);">{{ $message }}</small>@enderror
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 32px;">
+                        <label for="message">Your Inquiry Message</label>
+                        <textarea name="message" id="message" rows="5"
+                            class="form-control-lp @error('message') error @enderror" required
+                            placeholder="Describe what products or fabric swatches you'd like details on...">{{ old('message') }}</textarea>
+                        @error('message')<small style="color: var(--lp-danger);">{{ $message }}</small>@enderror
+                    </div>
+
+                    <button type="submit" class="btn-submit-lp" style="width:100%;">
+                        📧 Send Inquiry Message
+                    </button>
+                </form>
             </div>
         </div>
     </section>

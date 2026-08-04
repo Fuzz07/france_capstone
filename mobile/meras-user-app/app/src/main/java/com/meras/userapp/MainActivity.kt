@@ -360,16 +360,11 @@ class MainActivity : AppCompatActivity() {
                     view.evaluateJavascript("window.isLoggedIn") { value ->
                         val cleanValue = value?.replace("\"", "")?.trim()
                         val isLoggedIn = cleanValue == "true"
-                        if (isLoggedIn) {
-                            bottomNav.visibility = View.VISIBLE
-                            if (url.contains("/chat")) {
-                                fabChatbot.visibility = View.GONE
-                            } else {
-                                fabChatbot.visibility = View.VISIBLE
-                            }
-                        } else {
-                            bottomNav.visibility = View.GONE
+                        bottomNav.visibility = View.VISIBLE
+                        if (url.contains("/chat")) {
                             fabChatbot.visibility = View.GONE
+                        } else {
+                            fabChatbot.visibility = if (isLoggedIn) View.VISIBLE else View.GONE
                         }
                     }
 
@@ -567,7 +562,7 @@ class MainActivity : AppCompatActivity() {
             )
             setBackgroundColor(Color.WHITE)
             gravity = Gravity.CENTER_VERTICAL
-            visibility = View.GONE
+            visibility = View.VISIBLE
             
             val border = GradientDrawable().apply {
                 setColor(Color.WHITE)
@@ -577,11 +572,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         val tabs = listOf(
-            TabItem("🏠", "Home", "home"),
-            TabItem("🛍️", "Products", "products"),
-            TabItem("✉️", "Inquiry", "inquiry"),
-            TabItem("👤", "Profile", "profile"),
-            TabItem("🔔", "Alerts", "alerts")
+            TabItem(R.drawable.ic_nav_home, "Home", "home"),
+            TabItem(R.drawable.ic_nav_products, "Products", "products"),
+            TabItem(R.drawable.ic_nav_inquiry, "Inquiry", "inquiry"),
+            TabItem(R.drawable.ic_nav_profile, "Profile", "profile"),
+            TabItem(R.drawable.ic_nav_alerts, "Alerts", "alerts")
         )
 
         for (i in tabs.indices) {
@@ -606,10 +601,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val iconView = TextView(this).apply {
-                text = tab.icon
-                textSize = 21f
-                gravity = Gravity.CENTER
+            val iconView = android.widget.ImageView(this).apply {
+                setImageResource(tab.iconResId)
+                layoutParams = LinearLayout.LayoutParams(dpToPx(22), dpToPx(22))
+                setColorFilter(Color.parseColor("#64748b"))
             }
 
             val titleView = TextView(this).apply {
@@ -660,11 +655,14 @@ class MainActivity : AppCompatActivity() {
 
         for (i in tabViews.indices) {
             val tabLayout = tabViews[i]
+            val iconView = tabLayout.getChildAt(0) as android.widget.ImageView
             val titleView = tabLayout.getChildAt(1) as TextView
             if (i == activeIndex) {
+                iconView.setColorFilter(activeColor)
                 titleView.setTextColor(activeColor)
                 titleView.paint.isFakeBoldText = true
             } else {
+                iconView.setColorFilter(inactiveColor)
                 titleView.setTextColor(inactiveColor)
                 titleView.paint.isFakeBoldText = false
             }
@@ -725,5 +723,5 @@ class MainActivity : AppCompatActivity() {
         webView.saveState(outState)
     }
 
-    private data class TabItem(val icon: String, val title: String, val id: String)
+    private data class TabItem(val iconResId: Int, val title: String, val id: String)
 }

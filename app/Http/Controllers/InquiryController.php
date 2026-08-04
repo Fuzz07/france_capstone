@@ -42,18 +42,16 @@ class InquiryController extends Controller
 
     public function store(Request $request)
     {
-        if (!Auth::check()) {
-            return redirect()->route('login')
-                ->with('notice', 'Please login or register first to submit an inquiry.')
-                ->with('noticeType', 'danger');
-        }
-
         $validated = $request->validate([
             'customer_name' => 'required|string|max:150',
             'customer_email' => 'required|email|max:150',
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
         ]);
+
+        if (Auth::check()) {
+            $validated['user_id'] = Auth::id();
+        }
 
         if (session()->has('fcm_token')) {
             $validated['fcm_token'] = session('fcm_token');
