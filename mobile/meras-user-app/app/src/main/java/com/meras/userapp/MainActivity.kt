@@ -372,7 +372,7 @@ class MainActivity : AppCompatActivity() {
                         if (url.contains("/chat")) {
                             fabChatbot.visibility = View.GONE
                         } else {
-                            fabChatbot.visibility = if (isLoggedIn) View.VISIBLE else View.GONE
+                            fabChatbot.visibility = View.VISIBLE
                         }
                     }
 

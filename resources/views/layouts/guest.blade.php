@@ -297,6 +297,8 @@
                 });
             });
         </script>
+    @if(!$isMobileApp)
+        @include('partials.chatbot')
     @endif
 
     @stack('scripts')

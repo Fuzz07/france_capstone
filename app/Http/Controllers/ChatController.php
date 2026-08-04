@@ -13,7 +13,22 @@ class ChatController extends Controller
     public function index()
     {
         if (!auth()->check()) {
-            return redirect()->route('login');
+            $guestMessages = collect([
+                (object)[
+                    'user_name' => "Mera's Support Bot",
+                    'message' => "Hello! 👋 Welcome to Mera's Store support assistant. How can I help you today? Ask me about products, store hours, location, or payment options!",
+                    'created_at' => now(),
+                ]
+            ]);
+
+            return view('chat.index', [
+                'messages' => $guestMessages,
+                'supportInquiries' => collect(),
+                'messagesToday' => 0,
+                'totalMessages' => 0,
+                'pendingInquiries' => 0,
+                'respondedToday' => 0,
+            ]);
         }
 
         $user = auth()->user();
@@ -112,68 +127,166 @@ class ChatController extends Controller
     }
 
     /**
+     * AJAX Endpoint for Chatbot Widget (Supports Guest & Authenticated Users)
+     */
+    public function botResponse(Request $request)
+    {
+        $request->validate([
+            'message' => 'required|string|max:2000',
+        ]);
+
+        $userMessage = trim($request->input('message'));
+        $userName = auth()->check() ? auth()->user()->name : 'Guest Customer';
+
+        // Log message if user is authenticated
+        if (auth()->check()) {
+            Message::create([
+                'user_name' => $userName,
+                'message' => $userMessage,
+            ]);
+            \App\Models\ActivityLog::log('chat_message', 'Sent chatbot message: "' . \Illuminate\Support\Str::limit($userMessage, 50) . '"');
+        }
+
+        $botData = $this->getDetailedBotResponse($userMessage);
+
+        // Save bot response to conversation if user is logged in
+        if (auth()->check()) {
+            Message::create([
+                'user_name' => "Mera's Support Bot",
+                'message' => $botData['reply'],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'user_name' => $userName,
+            'reply' => $botData['reply'],
+            'suggestions' => $botData['suggestions'],
+            'products' => $botData['products'] ?? [],
+        ]);
+    }
+
+    /**
      * Generate an intelligent, helpful bot response based on customer keywords and store inventory.
      */
     private function getBotResponse($message)
     {
+        $data = $this->getDetailedBotResponse($message);
+        return $data['reply'];
+    }
+
+    /**
+     * Generate structured bot response with reply, product matches, and suggested chips.
+     */
+    private function getDetailedBotResponse($message)
+    {
         $lowerMsg = strtolower(trim($message));
+        $defaultSuggestions = ["Store Hours 🕒", "Location 📍", "Check Products 🛍️", "Payment Methods 💳"];
         
         // Greeting intents
-        if (preg_match('/\b(hi|hello|hey|greetings|good morning|good afternoon|good evening|hello bot)\b/', $lowerMsg)) {
-            return "Hello! 👋 Welcome to Mera's Store support assistant. How can I help you today? You can ask me about our products, store hours, location, or payment options.";
+        if (preg_match('/\b(hi|hello|hey|greetings|good morning|good afternoon|good evening|hello bot|help|start)\b/', $lowerMsg)) {
+            return [
+                'reply' => "Hello! 👋 Welcome to Mera's Merchandise support assistant. How can I help you today? You can ask me about our products, store hours, location, or payment options.",
+                'suggestions' => $defaultSuggestions,
+            ];
         }
         
         // Store hours intents
         if (str_contains($lowerMsg, 'hour') || str_contains($lowerMsg, 'time') || str_contains($lowerMsg, 'open') || str_contains($lowerMsg, 'schedule') || str_contains($lowerMsg, 'close') || str_contains($lowerMsg, 'when')) {
-            return "🕒 Store Hours:\nWe are open Monday to Saturday, from 8:00 AM to 6:00 PM. We are closed on Sundays to restock our amazing goods!";
+            return [
+                'reply' => "🕒 Store Hours:\nWe are open Monday to Saturday, from 8:00 AM to 6:00 PM. We are closed on Sundays to restock our goods!",
+                'suggestions' => ["Location 📍", "Check Products 🛍️", "Contact Details 📞"],
+            ];
         }
         
         // Location/address intents
         if (str_contains($lowerMsg, 'where') || str_contains($lowerMsg, 'location') || str_contains($lowerMsg, 'address') || str_contains($lowerMsg, 'find') || str_contains($lowerMsg, 'stall') || str_contains($lowerMsg, 'place') || str_contains($lowerMsg, 'direction')) {
-            return "📍 Our Location:\nYou can find us at Stall No. 18, Bantayan Public Market, Suba, Bantayan, Cebu 6052. Drop by and say hello! 😊";
+            return [
+                'reply' => "📍 Our Location:\nYou can find us at Stall No. 18, Bantayan Public Market, Suba, Bantayan, Cebu 6052. Drop by and say hello! 😊",
+                'suggestions' => ["Store Hours 🕒", "Check Products 🛍️", "Payment Methods 💳"],
+            ];
         }
         
         // Payment intents
         if (str_contains($lowerMsg, 'pay') || str_contains($lowerMsg, 'payment') || str_contains($lowerMsg, 'gcash') || str_contains($lowerMsg, 'cash')) {
-            return "💳 Payment Methods:\nWe accept Cash in store and GCash payments. For GCash, we have a QR code at the checkout counter. You can scan and pay securely!";
+            return [
+                'reply' => "💳 Payment Methods:\nWe accept Cash in store and GCash payments. For GCash, we have a QR code at the checkout counter. You can scan and pay securely!",
+                'suggestions' => ["Store Hours 🕒", "Location 📍", "Check Products 🛍️"],
+            ];
         }
 
         // Contact details
         if (str_contains($lowerMsg, 'contact') || str_contains($lowerMsg, 'phone') || str_contains($lowerMsg, 'call') || str_contains($lowerMsg, 'number') || str_contains($lowerMsg, 'email') || str_contains($lowerMsg, 'fb') || str_contains($lowerMsg, 'facebook')) {
-            return "📞 Contact Info:\nEmail: support@meras-merchandise.com\nFacebook: fb.com/meras.merchandise\nYou can also submit an official inquiry through the 'Inquiry' tab in your app menu.";
+            return [
+                'reply' => "📞 Contact Info:\nEmail: support@meras-merchandise.com\nFacebook: fb.com/meras.merchandise\nYou can also submit an inquiry through our Contact page or Inquiry form.",
+                'suggestions' => ["Location 📍", "Check Products 🛍️", "Store Hours 🕒"],
+            ];
         }
 
         // Product inventory search
-        if (str_contains($lowerMsg, 'product') || str_contains($lowerMsg, 'item') || str_contains($lowerMsg, 'price') || str_contains($lowerMsg, 'stock') || str_contains($lowerMsg, 'inventory') || str_contains($lowerMsg, 'buy') || str_contains($lowerMsg, 'sell')) {
-            // Check if there is a specific product name mentioned
+        if (str_contains($lowerMsg, 'product') || str_contains($lowerMsg, 'item') || str_contains($lowerMsg, 'price') || str_contains($lowerMsg, 'stock') || str_contains($lowerMsg, 'inventory') || str_contains($lowerMsg, 'buy') || str_contains($lowerMsg, 'sell') || str_contains($lowerMsg, 'fabric') || str_contains($lowerMsg, 'bag') || str_contains($lowerMsg, 'supply') || str_contains($lowerMsg, 'notebook') || str_contains($lowerMsg, 'pen')) {
             $products = Product::all();
-            $matchedProduct = null;
+            $matchedProducts = [];
+            
             foreach ($products as $p) {
-                if (str_contains($lowerMsg, strtolower($p->name))) {
-                    $matchedProduct = $p;
-                    break;
+                if (str_contains($lowerMsg, strtolower($p->name)) || (isset($p->category) && str_contains($lowerMsg, strtolower($p->category)))) {
+                    $matchedProducts[] = $p;
                 }
             }
-            
-            if ($matchedProduct) {
-                $stockStatus = $matchedProduct->quantity > 0 ? "🟢 In Stock ({$matchedProduct->quantity} left)" : "🔴 Out of Stock";
-                return "🛍️ Product Found:\nName: " . $matchedProduct->name . "\nPrice: ₱" . number_format($matchedProduct->price, 2) . "\nStatus: " . $stockStatus . "\nDescription: " . ($matchedProduct->description ?: 'Premium merchandise item') . "\n\nYou can view and purchase this in our catalog under the 'Products' tab!";
-            }
-            
-            // Otherwise show a few in-stock items
-            $featured = Product::where('quantity', '>', 0)->limit(3)->get();
-            if ($featured->count() > 0) {
-                $list = "";
-                foreach ($featured as $f) {
-                    $list .= "• " . $f->name . " (₱" . number_format($f->price, 2) . ")\n";
+
+            if (count($matchedProducts) > 0) {
+                $productListMsg = "🛍️ Matching Products Found:\n";
+                $productItems = [];
+                foreach (array_slice($matchedProducts, 0, 4) as $p) {
+                    $status = $p->quantity > 10 ? "🟢 In Stock" : ($p->quantity > 0 ? "🟡 Low Stock ({$p->quantity} left)" : "🔴 Out of Stock");
+                    $productListMsg .= "• {$p->name} — ₱" . number_format($p->price, 2) . " ({$status})\n";
+                    $productItems[] = [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'price' => '₱' . number_format($p->price, 2),
+                        'quantity' => $p->quantity,
+                        'status' => $status,
+                        'category' => $p->category ?? 'Merchandise',
+                    ];
                 }
-                return "🛍️ Store Products:\nWe have some great merchandise available! Here are a few featured items:\n" . $list . "\nBrowse our full list on the 'Products' tab inside the app!";
+                $productListMsg .= "\nFeel free to ask about another item or view all items in our catalog!";
+                
+                return [
+                    'reply' => $productListMsg,
+                    'suggestions' => ["Store Hours 🕒", "Location 📍", "Payment Methods 💳"],
+                    'products' => $productItems,
+                ];
             }
-            
-            return "🛍️ Products:\nWe offer a selection of premium bags, apparel, and merchandise. You can check the 'Products' tab for pricing and stock availability!";
+
+            // Featured items if no direct search match
+            $featured = Product::where('quantity', '>', 0)->limit(4)->get();
+            $featuredMsg = "🛍️ Featured Store Products:\n";
+            $productItems = [];
+            foreach ($featured as $f) {
+                $status = "🟢 In Stock (" . $f->quantity . " left)";
+                $featuredMsg .= "• {$f->name} — ₱" . number_format($f->price, 2) . "\n";
+                $productItems[] = [
+                    'id' => $f->id,
+                    'name' => $f->name,
+                    'price' => '₱' . number_format($f->price, 2),
+                    'quantity' => $f->quantity,
+                    'status' => $status,
+                    'category' => $f->category ?? 'Merchandise',
+                ];
+            }
+            $featuredMsg .= "\nYou can also search for a specific product by name!";
+
+            return [
+                'reply' => $featuredMsg,
+                'suggestions' => ["Store Hours 🕒", "Location 📍", "Payment Methods 💳"],
+                'products' => $productItems,
+            ];
         }
-        
-        // Help or default fallback
-        return "🤖 Support Assistant:\nThank you for your message! If you need live assistance, our staff has been notified and will reply here soon.\n\nIn the meantime, feel free to ask me about:\n- 🕒 Store Hours\n- 📍 Location / Address\n- 🛍️ Products / Stock\n- 💳 Payment options";
+
+        // Default fallback
+        return [
+            'reply' => "🤖 Support Assistant:\nThank you for your message! If you need specific assistance, you can ask about our products, store hours, location, or payment options.\n\nOur staff has also been notified and will be happy to assist you!",
+            'suggestions' => $defaultSuggestions,
+        ];
     }
 }

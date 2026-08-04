@@ -21,7 +21,7 @@
     }
 </style>
 
-@if(auth()->user()->role === 'user')
+@if(!auth()->check() || auth()->user()->role === 'user')
     <style>
         .support-queue {
             display: none !important;
@@ -132,7 +132,7 @@
                 <div class="chat-heading-wrap">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     <div>
-                        @if(auth()->user()->role === 'user')
+                        @if(!auth()->check() || auth()->user()->role === 'user')
                             <h3>💬 Mera's Support Assistant</h3>
                             <p>Ask us anything! • Online</p>
                         @else
@@ -149,7 +149,7 @@
 
             <div class="chat-box" id="chatbox">
                 @forelse($messages as $message)
-                    @php $isOwn = $message->user_name === auth()->user()->name; @endphp
+                    @php $isOwn = auth()->check() && $message->user_name === auth()->user()->name; @endphp
                     <div class="chat-message {{ $isOwn ? 'chat-own' : 'chat-other' }}">
                         <div class="chat-msg-avatar {{ $isOwn ? 'chat-avatar-own' : 'chat-avatar-other' }}">
                             {{ strtoupper(substr($message->user_name, 0, 1)) }}
@@ -175,7 +175,7 @@
             </div>
 
             <div class="chat-quick-replies" id="quickReplies">
-                @if(auth()->user()->role === 'user')
+                @if(!auth()->check() || auth()->user()->role === 'user')
                     <span class="chat-quick-label">Frequently Asked:</span>
                     <button type="button" class="chat-quick-btn" onclick="setMsg('What are your store hours?')">Store Hours 🕒</button>
                     <button type="button" class="chat-quick-btn" onclick="setMsg('Where is your store located?')">Location 📍</button>
@@ -193,9 +193,9 @@
 
             <form id="msgForm" method="POST" action="{{ route('chat.store') }}" class="chat-input-form">
                 @csrf
-                <input id="user_name" type="hidden" name="user_name" value="{{ auth()->user()->name }}">
+                <input id="user_name" type="hidden" name="user_name" value="{{ auth()->check() ? auth()->user()->name : 'Guest' }}">
                 <div class="chat-input-wrapper">
-                    @if(auth()->user()->role === 'user')
+                    @if(!auth()->check() || auth()->user()->role === 'user')
                         <textarea id="msgInput" name="message" placeholder="Ask about products, store hours, location..." rows="1" autocomplete="off" required></textarea>
                     @else
                         <textarea id="msgInput" name="message" placeholder="Type a team note or customer reply draft..." rows="1" autocomplete="off" required></textarea>
@@ -278,7 +278,7 @@ setInterval(function() {
         .then(response => response.json())
         .then(messages => {
             const box = document.getElementById('chatbox');
-            const authUser = @json(auth()->user()->name);
+            const authUser = @json(auth()->check() ? auth()->user()->name : 'Guest');
             const wasAtBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 10;
 
             if (!messages.length) {

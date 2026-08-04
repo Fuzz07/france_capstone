@@ -314,6 +314,8 @@
         <a href="{{ route('chat.index') }}" class="mobile-chat-fab" title="Open Conversation">
             <i class="bi bi-chat-dots-fill"></i>
         </a>
+    @if(!$isMobileApp)
+        @include('partials.chatbot')
     @endif
 
     @stack('scripts')

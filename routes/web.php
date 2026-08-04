@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
 Route::get('/chat/messages', [ChatController::class, 'messages'])->name('chat.messages');
 Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.store');
+Route::post('/chat/bot-response', [ChatController::class, 'botResponse'])->name('chat.bot-response');
 
 // Administrative & Management Routes (Strict Admin Role Required)
 Route::middleware(['auth', 'admin'])->group(function () {

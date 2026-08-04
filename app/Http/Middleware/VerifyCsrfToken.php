@@ -8,6 +8,7 @@ class VerifyCsrfToken extends Middleware
 {
     protected $except = [
         '/chat/messages',
+        '/chat/bot-response',
         '/social-login',
     ];
 }
