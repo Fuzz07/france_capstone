@@ -5084,26 +5084,27 @@ body.dashboard-body, body.dashboard-body * { box-sizing: border-box; }
 
 /* ── Interactive Floating Chatbot Widget ────────────────── */
 .chatbot-widget-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 99999;
-  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 999999 !important;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif) !important;
+  display: block !important;
 }
 
 .chatbot-fab {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 18px 10px 14px;
-  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
-  color: #ffffff;
-  border: none;
-  border-radius: 50px;
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  outline: none;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 18px 10px 14px !important;
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 50px !important;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.45) !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  outline: none !important;
 }
 
 .chatbot-fab:hover {
@@ -5465,13 +5466,14 @@ body.dashboard-body, body.dashboard-body * { box-sizing: border-box; }
 
 @media (max-width: 767px) {
   .chatbot-widget-container {
-    bottom: 80px;
-    right: 16px;
+    bottom: 80px !important;
+    right: 16px !important;
+    z-index: 999999 !important;
   }
   .chatbot-window {
-    bottom: 60px;
-    right: 0;
-    width: calc(100vw - 32px);
-    height: 480px;
+    bottom: 60px !important;
+    right: 0 !important;
+    width: calc(100vw - 32px) !important;
+    height: 480px !important;
   }
 }

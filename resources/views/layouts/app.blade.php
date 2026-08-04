@@ -309,14 +309,7 @@
         </div>
     @endif
 
-    @if(!request()->routeIs('chat.*') && !$isMobileApp)
-        <!-- Floating Chat Action Button on Mobile -->
-        <a href="{{ route('chat.index') }}" class="mobile-chat-fab" title="Open Conversation">
-            <i class="bi bi-chat-dots-fill"></i>
-        </a>
-    @if(!$isMobileApp)
-        @include('partials.chatbot')
-    @endif
+    @include('partials.chatbot')
 
     @stack('scripts')
 </body>

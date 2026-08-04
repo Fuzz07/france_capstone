@@ -297,9 +297,9 @@
                 });
             });
         </script>
-    @if(!$isMobileApp)
-        @include('partials.chatbot')
     @endif
+
+    @include('partials.chatbot')
 
     @stack('scripts')
 </body>
