@@ -36,6 +36,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
     Route::get('/reset-password', [AuthController::class, 'showResetPassword'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
+});
+
 // Authenticated Routes (Customers & Admins)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [InquiryController::class, 'profile'])->name('profile.index');
