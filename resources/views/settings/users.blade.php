@@ -561,7 +561,7 @@
                     </td>
                     <td style="color: #475569; font-size: 13.5px; font-weight: 500;">
                         <i class="bi bi-calendar3" style="color: #94a3b8; margin-right: 6px; font-size: 13px;"></i>
-                        {{ $u->created_at ? $u->created_at->format('M d, Y h:i A') : 'N/A' }}
+                        {{ $u->created_at ? \Carbon\Carbon::parse($u->created_at)->format('M d, Y h:i A') : 'N/A' }}
                     </td>
                     <td style="text-align: right;">
                         @if($u->id !== Auth::id())

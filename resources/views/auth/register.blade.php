@@ -4,7 +4,7 @@
 
 @section('content')
     <!-- Google Sign-In SDK Loader -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleSignIn()"></script>
 
     <style>
         /* Premium Glassmorphic Loading Overlay */
@@ -421,32 +421,47 @@
             });
         }
 
-        // Initialize Real Google SDK
-        window.addEventListener('load', function() {
+        // Initialize Real Google SDK safely
+        window.initGoogleSignIn = function() {
             const isMobileApp = @json(session('is_mobile_app', false));
-            if (typeof google !== 'undefined') {
-                google.accounts.id.initialize({
-                    client_id: "{{ trim(env('GOOGLE_CLIENT_ID', '1069663364838-9nir3njd1j1ooph3vihgg5snamu9861i.apps.googleusercontent.com'), '\"\'') }}",
-                    ux_mode: isMobileApp ? 'redirect' : 'popup',
-                    login_uri: isMobileApp ? "{{ route('social.login') }}" : undefined,
-                    callback: isMobileApp ? undefined : handleCredentialResponse
-                });
+            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                try {
+                    google.accounts.id.initialize({
+                        client_id: "{{ trim(env('GOOGLE_CLIENT_ID', '1069663364838-9nir3njd1j1ooph3vihgg5snamu9861i.apps.googleusercontent.com'), '\"\'') }}",
+                        ux_mode: isMobileApp ? 'redirect' : 'popup',
+                        login_uri: isMobileApp ? "{{ route('social.login') }}" : undefined,
+                        callback: isMobileApp ? undefined : handleCredentialResponse
+                    });
 
-                const btnDiv = document.getElementById("googleButtonDiv");
-                if (btnDiv) {
-                    google.accounts.id.renderButton(
-                        btnDiv,
-                        { 
-                            theme: "outline", 
-                            size: "large", 
-                            type: "standard", 
-                            shape: "rectangular", 
-                            text: "signup_with", 
-                            logo_alignment: "left",
-                            width: btnDiv.offsetWidth || 180
-                        }
-                    );
+                    const btnDiv = document.getElementById("googleButtonDiv");
+                    if (btnDiv) {
+                        let calculatedWidth = btnDiv.offsetWidth || btnDiv.parentElement.offsetWidth || 320;
+                        if (calculatedWidth < 200) calculatedWidth = 200;
+                        if (calculatedWidth > 400) calculatedWidth = 400;
+
+                        google.accounts.id.renderButton(
+                            btnDiv,
+                            { 
+                                theme: "outline", 
+                                size: "large", 
+                                type: "standard", 
+                                shape: "rectangular", 
+                                text: "signup_with", 
+                                logo_alignment: "left",
+                                width: calculatedWidth
+                            }
+                        );
+                    }
+                } catch (err) {
+                    console.error("Google Sign-In initialization encountered an error:", err);
                 }
+            }
+        };
+
+        window.addEventListener('load', function() {
+            // Safe fallback in case onload did not fire or script was loaded from cache before onload event listener was set
+            if (typeof google !== 'undefined') {
+                initGoogleSignIn();
             }
         });
 
@@ -505,13 +520,18 @@
             const isMobileApp = @json(session('is_mobile_app', false));
 
             // If they clicked Google and are NOT in the mobile app, and the Google SDK is successfully loaded, prompt it!
-            if (provider === 'google' && !isMobileApp && typeof google !== 'undefined') {
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        // Fall back to simulation if native prompt is skipped or blocked
-                        renderSimulationModal(provider);
-                    }
-                });
+            if (provider === 'google' && !isMobileApp && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                try {
+                    google.accounts.id.prompt((notification) => {
+                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                            // Fall back to simulation if native prompt is skipped or blocked
+                            renderSimulationModal(provider);
+                        }
+                    });
+                } catch (e) {
+                    console.error("Native Google One-Tap prompt failed, falling back to simulator:", e);
+                    renderSimulationModal(provider);
+                }
                 return;
             }
 
@@ -558,6 +578,19 @@
         function closeSocialConsent() {
             document.getElementById('socialModalOverlay').classList.remove('active');
         }
+
+        // Safe Click-Outside and Escape listener for the modal
+        document.getElementById('socialModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSocialConsent();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeSocialConsent();
+            }
+        });
 
         function toggleCustomForm() {
             const form = document.getElementById('customAccountForm');
