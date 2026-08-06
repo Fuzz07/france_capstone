@@ -103,7 +103,7 @@ class ChatBotTest extends TestCase
 
         $this->assertDatabaseHas('messages', [
             'user_name' => "Mera's Support Bot",
-            'message' => "Hello! 👋 Welcome to Mera's Store support assistant. How can I help you today? You can ask me about our products, store hours, location, or payment options."
+            'message' => "Hello! 👋 Welcome to Mera's Merchandise support assistant. How can I help you today? You can ask me about our products, store hours, location, or payment options."
         ]);
     }
 

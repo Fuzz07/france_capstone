@@ -94,4 +94,30 @@ class SecurityTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    /** @test */
+    public function authenticated_users_are_redirected_by_role_from_guest_routes()
+    {
+        $customer = User::create([
+            'name' => 'Test Customer',
+            'email' => 'customer_test_' . uniqid() . '@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'user',
+        ]);
+
+        $this->actingAs($customer);
+        $this->get('/login')->assertRedirect('/');
+        $this->get('/register')->assertRedirect('/');
+
+        $admin = User::create([
+            'name' => 'Test Admin2',
+            'email' => 'admin_test2_' . uniqid() . '@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin);
+        $this->get('/login')->assertRedirect('/dashboard');
+        $this->get('/register')->assertRedirect('/dashboard');
+    }
 }

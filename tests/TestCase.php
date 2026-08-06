@@ -103,6 +103,7 @@ abstract class TestCase extends BaseTestCase
             $table->string('action');
             $table->text('description')->nullable();
             $table->string('ip_address')->nullable();
+            $table->text('user_agent')->nullable();
             $table->timestamps();
         });
     }

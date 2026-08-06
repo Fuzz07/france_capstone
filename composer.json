@@ -9,7 +9,8 @@
     "require-dev": {
         "phpunit/phpunit": "^10.0",
         "mockery/mockery": "*",
-        "laravel/pint": "*"
+        "laravel/pint": "*",
+        "doctrine/dbal": "^3.10"
     },
     "autoload": {
         "psr-4": {

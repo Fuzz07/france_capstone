@@ -62,11 +62,21 @@ class SettingsController extends Controller
 
         if ($action === 'seed_products') {
             // Disable FK checks to allow truncating tables with foreign-key relationships.
-            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            } elseif (DB::getDriverName() === 'sqlite') {
+                DB::statement('PRAGMA foreign_keys = OFF');
+            }
+
             DB::table('sale_items')->truncate();
             DB::table('sales')->truncate();
             DB::table('products')->truncate();
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            } elseif (DB::getDriverName() === 'sqlite') {
+                DB::statement('PRAGMA foreign_keys = ON');
+            }
 
             $demoProducts = [
                 // --- School Supplies ---
@@ -92,6 +102,12 @@ class SettingsController extends Controller
                 ['SCH-CLIP-PND', 'Binder Clips 19mm (Box of 12)', 'School Supplies', 35.00, 80],
                 ['SCH-REFTAPE', 'Correction Tape 5mm x 8m', 'School Supplies', 25.00, 120],
                 ['SCH-DRAW-PAD', 'Sketchbook/Drawing Pad A4', 'School Supplies', 95.00, 50],
+                ['SCH-PAINT-WTR', 'Water Color Paint Set 12 Colors', 'School Supplies', 110.00, 45],
+                ['SCH-CLIP-BRD', 'A4 Wooden Clipboard', 'School Supplies', 45.00, 70],
+                ['SCH-INDEX-CRD', 'Ruled Index Cards 3x5 (Pack of 100)', 'School Supplies', 35.00, 110],
+                ['SCH-PROTRACTOR', 'Clear Plastic Protractor 180 Degrees', 'School Supplies', 12.00, 150],
+                ['SCH-PUNCHER', 'Two-Hole Paper Puncher Heavy Duty', 'School Supplies', 160.00, 30],
+                ['SCH-REFILL-GEL', 'Blue Gel Pen Refill 0.5mm (Pack of 5)', 'School Supplies', 40.00, 85],
 
                 // --- Fabric ---
                 ['FAB-COTTON', 'Printed Cotton Fabric (Yard)', 'Fabric', 120.00, 40],
@@ -115,6 +131,12 @@ class SettingsController extends Controller
                 ['FAB-JERSEY', 'Stretch Cotton Jersey Fabric (Yard)', 'Fabric', 160.00, 25],
                 ['FAB-NYLON', 'Ripstop Nylon Fabric (Yard)', 'Fabric', 110.00, 40],
                 ['FAB-TWEED', 'Classic Tweed Fabric (Yard)', 'Fabric', 290.00, 15],
+                ['FAB-RAYON', 'Soft Rayon Challis Fabric (Yard)', 'Fabric', 130.00, 32],
+                ['FAB-BROAD', 'Polyester Cotton Broadcloth (Yard)', 'Fabric', 90.00, 50],
+                ['FAB-TAFFETA', 'Crisp Polyester Taffeta Fabric (Yard)', 'Fabric', 140.00, 24],
+                ['FAB-MUSLIN', 'Unbleached Cotton Muslin Fabric (Yard)', 'Fabric', 85.00, 60],
+                ['FAB-SEERSUCKER', 'Striped Cotton Seersucker (Yard)', 'Fabric', 175.00, 18],
+                ['FAB-GEORGETTE', 'Premium Georgette Fabric (Yard)', 'Fabric', 155.00, 22],
 
                 // --- General Merchandise ---
                 ['GEN-UMBRELLA', 'Compact Foldable Umbrella', 'General Merchandise', 180.00, 50],
@@ -129,6 +151,12 @@ class SettingsController extends Controller
                 ['GEN-KITCHEN', 'Digital Kitchen Scale 5kg', 'General Merchandise', 220.00, 15],
                 ['GEN-SACK-TRG', 'Reusable Shopping Tote Bag', 'General Merchandise', 40.00, 200],
                 ['GEN-PHONE-STND', 'Adjustable Desktop Phone Stand', 'General Merchandise', 110.00, 45],
+                ['GEN-MUG-TRAVEL', 'Insulated Stainless Travel Mug 500ml', 'General Merchandise', 260.00, 40],
+                ['GEN-BATTERY-AAA', 'AAA Alkaline Batteries (Pack of 4)', 'General Merchandise', 120.00, 95],
+                ['GEN-CALCULATOR-DESK', 'Desktop Electronic Calculator 12-Digit', 'General Merchandise', 185.00, 30],
+                ['GEN-PLUG-ADAPTER', 'Universal Travel Plug Adapter', 'General Merchandise', 150.00, 50],
+                ['GEN-HANGER-WD', 'Wooden Clothes Hangers (Set of 5)', 'General Merchandise', 135.00, 60],
+                ['GEN-SCISSORS-KT', 'Heavy Duty Kitchen Shears', 'General Merchandise', 110.00, 40],
             ];
 
             foreach ($demoProducts as $product) {

@@ -43,12 +43,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [InquiryController::class, 'profile'])->name('profile.index');
     Route::get('/notifications', [InquiryController::class, 'notifications'])->name('profile.notifications');
     Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Live Support Chat Routes (Full Page UI)
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/messages', [ChatController::class, 'messages'])->name('chat.messages');
+    Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.store');
 });
 
-// Live Support Chat Routes (Public & Mobile App)
-Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-Route::get('/chat/messages', [ChatController::class, 'messages'])->name('chat.messages');
-Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.store');
+// Live Support Chat Bot AJAX Endpoint (Public & Mobile App)
 Route::post('/chat/bot-response', [ChatController::class, 'botResponse'])->name('chat.bot-response');
 
 // Administrative & Management Routes (Strict Admin Role Required)
