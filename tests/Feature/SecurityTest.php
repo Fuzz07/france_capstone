@@ -96,6 +96,20 @@ class SecurityTest extends TestCase
     }
 
     /** @test */
+    public function social_login_returns_json_for_raw_json_payload()
+    {
+        $response = $this->post('/social-login', [
+            'provider' => 'google',
+            'credential' => 'invalid_token',
+        ], [
+            'Content-Type' => 'application/json',
+        ]);
+
+        $response->assertHeader('Content-Type', 'application/json');
+        $response->assertStatus(422);
+    }
+
+    /** @test */
     public function authenticated_users_are_redirected_by_role_from_guest_routes()
     {
         $customer = User::create([

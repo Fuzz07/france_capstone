@@ -92,9 +92,10 @@ class AuthController extends Controller
             $idToken = $request->input('credential');
             $provider = $request->input('provider', 'google');
             $isMobileApp = session('is_mobile_app', false);
+            $isJsonRequest = $request->expectsJson() || $request->ajax() || $request->isJson() || $request->wantsJson();
 
             if ($provider !== 'google') {
-                if ($request->expectsJson() || $request->ajax()) {
+                if ($isJsonRequest) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Invalid authentication parameters.'
@@ -124,7 +125,7 @@ class AuthController extends Controller
                     Auth::login($user);
                     $request->session()->regenerate();
 
-                    if ($request->expectsJson() || $request->ajax()) {
+                    if ($isJsonRequest) {
                         return response()->json([
                             'success' => true,
                             'redirect' => route('mobile.home'),
@@ -134,7 +135,7 @@ class AuthController extends Controller
                     return redirect()->route('mobile.home');
                 }
 
-                if ($request->expectsJson() || $request->ajax()) {
+                if ($isJsonRequest) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Invalid authentication parameters.'
@@ -202,7 +203,7 @@ class AuthController extends Controller
                     Auth::login($user);
                     $request->session()->regenerate();
                     
-                    if ($request->expectsJson() || $request->ajax()) {
+                    if ($isJsonRequest) {
                         return response()->json([
                             'success' => true,
                             'redirect' => $isMobileApp ? route('mobile.home') : route('home'),
@@ -216,7 +217,7 @@ class AuthController extends Controller
                 }
             }
             
-            if ($request->expectsJson() || $request->ajax()) {
+            if ($isJsonRequest) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to verify Google identity token.'
@@ -227,7 +228,7 @@ class AuthController extends Controller
             }
         } catch (\Throwable $e) {
             Log::error('Social login failure: ' . $e->getMessage());
-            if ($request->expectsJson() || $request->ajax()) {
+            if ($isJsonRequest) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Authentication processing failed.'

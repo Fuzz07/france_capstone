@@ -475,6 +475,8 @@
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
                     "X-CSRF-TOKEN": "{{ csrf_token() }}"
                 },
                 body: JSON.stringify({
@@ -483,7 +485,12 @@
                 })
             })
             .then(async res => {
-                if (!res.ok) {
+                const contentType = res.headers.get("content-type");
+                if (!res.ok || !contentType || !contentType.includes("application/json")) {
+                    if (res.redirected) {
+                        window.location.href = res.url;
+                        return;
+                    }
                     const text = await res.text();
                     console.error("Google authentication failed. Server output:", text);
                     throw new Error("HTTP " + res.status + " error: " + (text.length > 120 ? text.substring(0, 120) + "..." : text));
@@ -491,6 +498,7 @@
                 return res.json();
             })
             .then(data => {
+                if (!data) return; // redirected
                 if (data.success) {
                     setTimeout(() => {
                         window.location.href = data.redirect;
@@ -637,6 +645,8 @@
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
                     "X-CSRF-TOKEN": "{{ csrf_token() }}"
                 },
                 body: JSON.stringify({
@@ -645,8 +655,20 @@
                     provider: currentProvider
                 })
             })
-            .then(res => res.json())
+            .then(async res => {
+                const contentType = res.headers.get("content-type");
+                if (!res.ok || !contentType || !contentType.includes("application/json")) {
+                    if (res.redirected) {
+                        window.location.href = res.url;
+                        return;
+                    }
+                    const text = await res.text();
+                    throw new Error("Unexpected server response format");
+                }
+                return res.json();
+            })
             .then(data => {
+                if (!data) return;
                 if (data.success) {
                     setTimeout(() => {
                         window.location.href = data.redirect;
