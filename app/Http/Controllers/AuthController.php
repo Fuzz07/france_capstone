@@ -88,11 +88,15 @@ class AuthController extends Controller
 
     public function socialLogin(Request $request)
     {
+        // Resolved before the try block so the catch handler can still branch on it
+        // if anything above throws - otherwise the catch died on an undefined variable
+        // and buried the original error.
+        $isJsonRequest = $request->expectsJson() || $request->ajax() || $request->isJson() || $request->wantsJson();
+
         try {
             $idToken = $request->input('credential');
             $provider = $request->input('provider', 'google');
             $isMobileApp = session('is_mobile_app', false);
-            $isJsonRequest = $request->expectsJson() || $request->ajax() || $request->isJson() || $request->wantsJson();
 
             if ($provider !== 'google') {
                 if ($isJsonRequest) {

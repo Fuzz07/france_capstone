@@ -282,7 +282,8 @@
                                 <span class="chat-msg-time">{{ optional($message->created_at)->diffForHumans() ?? '' }}</span>
                             </div>
                             <div class="chat-bubble {{ $isOwn ? 'chat-bubble-own' : 'chat-bubble-other' }}">
-                                {{ $message->message }}
+                                {{-- Escaped first, then bare URLs are linked so the bot's Messenger handoff is tappable. --}}
+                                {!! preg_replace('~https?://[^\s<]+~', '<a href="$0" target="_blank" rel="noopener noreferrer">$0</a>', e($message->message)) !!}
                             </div>
                         </div>
                     </div>
@@ -339,6 +340,14 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// Escapes first, then turns bare URLs into links so handoff links (e.g. the
+// Messenger one the bot offers) are tappable instead of plain text.
+function linkifyMessage(value) {
+    return escapeHtml(value).replace(/https?:\/\/[^\s<]+/g, function (url) {
+        return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + url + '</a>';
+    });
 }
 
 function scrollToBottom() {
@@ -461,7 +470,7 @@ function refreshMessages(forceScrollToBottom = false) {
                                 <strong class="chat-msg-author ${isOwn ? 'chat-author-own' : ''}">${displayName}</strong>
                                 <span class="chat-msg-time">${time}</span>
                             </div>
-                            <div class="chat-bubble ${isOwn ? 'chat-bubble-own' : 'chat-bubble-other'}">${escapeHtml(msg.message)}</div>
+                            <div class="chat-bubble ${isOwn ? 'chat-bubble-own' : 'chat-bubble-other'}">${linkifyMessage(msg.message)}</div>
                         </div>
                     </div>`;
             }).join('');

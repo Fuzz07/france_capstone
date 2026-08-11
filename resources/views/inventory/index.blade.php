@@ -236,6 +236,11 @@
                             </td>
                             <td style="text-align:right;font-weight:700;color:#059669;">
                                 &#8369;{{ number_format($product->price, 2) }}
+                                @if($product->hasBulkPricing())
+                                    <div style="font-size:0.72rem;font-weight:600;color:var(--color-text-muted);margin-top:2px;">
+                                        Bulk &#8369;{{ number_format($product->bulk_price, 2) }} at {{ $product->bulk_min_qty }}+
+                                    </div>
+                                @endif
                             </td>
                             <td style="text-align:center;">
                                 <div style="display:flex;justify-content:center;gap:6px;">
@@ -309,6 +314,19 @@
                         <input type="number" min="0" name="quantity" value="{{ old('quantity', $editProduct->quantity) }}" required placeholder="0">
                     </div>
                 </div>
+                <div class="inv-form-row">
+                    <div class="inv-form-group">
+                        <label>Bulk Price (PHP)</label>
+                        <input type="number" step="0.01" min="0" name="bulk_price" value="{{ old('bulk_price', $editProduct->bulk_price) }}" placeholder="0.00">
+                    </div>
+                    <div class="inv-form-group">
+                        <label>Bulk Starts At (qty)</label>
+                        <input type="number" min="2" name="bulk_min_qty" value="{{ old('bulk_min_qty', $editProduct->bulk_min_qty) }}" placeholder="e.g. 12">
+                    </div>
+                </div>
+                <p style="font-size:0.74rem;color:var(--color-text-muted);margin:-4px 0 10px;">
+                    Optional. Fill both and the POS charges the bulk price once the cart reaches that quantity. Leave blank for retail only.
+                </p>
                 @if ($errors->any())
                     <div style="color:var(--color-danger);font-size:0.8rem;margin-bottom:10px;">{{ $errors->first() }}</div>
                 @endif
@@ -348,6 +366,19 @@
                         <input type="number" min="0" name="quantity" value="{{ old('quantity') }}" required placeholder="0">
                     </div>
                 </div>
+                <div class="inv-form-row">
+                    <div class="inv-form-group">
+                        <label>Bulk Price (PHP)</label>
+                        <input type="number" step="0.01" min="0" name="bulk_price" value="{{ old('bulk_price') }}" placeholder="0.00">
+                    </div>
+                    <div class="inv-form-group">
+                        <label>Bulk Starts At (qty)</label>
+                        <input type="number" min="2" name="bulk_min_qty" value="{{ old('bulk_min_qty') }}" placeholder="e.g. 12">
+                    </div>
+                </div>
+                <p style="font-size:0.74rem;color:var(--color-text-muted);margin:-4px 0 10px;">
+                    Optional. Fill both and the POS charges the bulk price once the cart reaches that quantity. Leave blank for retail only.
+                </p>
                 @if ($errors->any())
                     <div style="color:var(--color-danger);font-size:0.8rem;margin-bottom:10px;">{{ $errors->first() }}</div>
                 @endif

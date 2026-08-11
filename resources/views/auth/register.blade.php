@@ -3,8 +3,8 @@
 @section('title', 'Register Customer Account')
 
 @section('content')
-    <!-- Google Sign-In SDK Loader -->
-    <script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleSignIn()"></script>
+    <!-- Google Sign-In SDK Loader; bootstrapped by the poller in the pushed scripts block -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         /* Premium Glassmorphic Loading Overlay */
@@ -381,17 +381,20 @@
 
         <!-- Social Buttons -->
         <div class="social-buttons">
-            <div id="googleButtonDiv" style="width: 100%; display: flex; align-items: center; justify-content: center;">
-                <button type="button" class="btn-social btn-google" style="width: 100%;" onclick="openSocialConsent('google')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48">
-                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                        <path fill="#4285F4" d="M46.5 24c0-1.55-.15-3.24-.47-4.75H24v9.03h12.75c-.55 2.87-2.17 5.3-4.61 6.94l7.19 5.57C43.53 36.21 46.5 30.73 46.5 24z"/>
-                        <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z"/>
-                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.19-5.57c-2.17 1.45-4.95 2.38-8.7 2.38-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                    </svg>
-                    Google
-                </button>
-            </div>
+            <!-- The official Google Identity Services button renders into this container -->
+            <div id="googleButtonDiv" style="width: 100%; display: flex; align-items: center; justify-content: center; min-height: 44px;"></div>
+
+            <!-- Shown only when the Google SDK is unavailable or fails to render -->
+            <button type="button" class="btn-social btn-google" id="googleFallbackBtn" style="width: 100%; display: none;" onclick="openSocialConsent('google')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.5 24c0-1.55-.15-3.24-.47-4.75H24v9.03h12.75c-.55 2.87-2.17 5.3-4.61 6.94l7.19 5.57C43.53 36.21 46.5 30.73 46.5 24z"/>
+                    <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.19-5.57c-2.17 1.45-4.95 2.38-8.7 2.38-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Google
+            </button>
+            <p id="googleFallbackHint" style="display: none; margin: 0; font-size: 0.75rem; color: #b45309; text-align: center; line-height: 1.4;"></p>
         </div>
 
         <div class="auth-footer" style="margin-top: 18px;">
@@ -421,49 +424,91 @@
             });
         }
 
-        // Initialize Real Google SDK safely
+        // ---- Google Identity Services bootstrap ---------------------------------
+        const isMobileApp = @json(session('is_mobile_app', false));
+        let googleInitialized = false;
+        let googleButtonRendered = false;
+
+        // Never fail silently: if GIS cannot render, reveal the manual button and say why.
+        function showGoogleFallback(reason) {
+            const fallbackBtn = document.getElementById('googleFallbackBtn');
+            const hint = document.getElementById('googleFallbackHint');
+            if (fallbackBtn) fallbackBtn.style.display = 'flex';
+            if (hint) {
+                hint.style.display = 'block';
+                hint.textContent = 'Google Sign-Up is unavailable on this device or origin. You can still create an account with the form above.';
+            }
+            console.warn(
+                '[Google Sign-In] Unavailable: ' + reason +
+                '\nPage origin: ' + window.location.origin +
+                '\nThis exact origin must be listed under "Authorized JavaScript origins" for the OAuth client in Google Cloud Console.'
+            );
+        }
+
         window.initGoogleSignIn = function() {
-            const isMobileApp = @json(session('is_mobile_app', false));
-            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                try {
-                    google.accounts.id.initialize({
-                        client_id: "{{ trim(env('GOOGLE_CLIENT_ID', '1069663364838-9nir3njd1j1ooph3vihgg5snamu9861i.apps.googleusercontent.com'), '\"\'') }}",
-                        ux_mode: isMobileApp ? 'redirect' : 'popup',
-                        login_uri: isMobileApp ? "{{ route('social.login') }}" : undefined,
-                        callback: isMobileApp ? undefined : handleCredentialResponse
-                    });
+            if (googleInitialized) return;
+            if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
 
-                    const btnDiv = document.getElementById("googleButtonDiv");
-                    if (btnDiv) {
-                        let calculatedWidth = btnDiv.offsetWidth || btnDiv.parentElement.offsetWidth || 320;
-                        if (calculatedWidth < 200) calculatedWidth = 200;
-                        if (calculatedWidth > 400) calculatedWidth = 400;
+            try {
+                google.accounts.id.initialize({
+                    client_id: "{{ trim(env('GOOGLE_CLIENT_ID', '1069663364838-9nir3njd1j1ooph3vihgg5snamu9861i.apps.googleusercontent.com'), '\"\'') }}",
+                    ux_mode: isMobileApp ? 'redirect' : 'popup',
+                    login_uri: isMobileApp ? "{{ route('social.login') }}" : undefined,
+                    callback: isMobileApp ? undefined : handleCredentialResponse,
+                    use_fedcm_for_prompt: true,
+                    itp_support: true,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+                googleInitialized = true;
 
-                        google.accounts.id.renderButton(
-                            btnDiv,
-                            { 
-                                theme: "outline", 
-                                size: "large", 
-                                type: "standard", 
-                                shape: "rectangular", 
-                                text: "signup_with", 
-                                logo_alignment: "left",
-                                width: calculatedWidth
-                            }
-                        );
+                const btnDiv = document.getElementById("googleButtonDiv");
+                if (!btnDiv) return;
+
+                let calculatedWidth = btnDiv.offsetWidth || (btnDiv.parentElement && btnDiv.parentElement.offsetWidth) || 320;
+                if (calculatedWidth < 200) calculatedWidth = 200;
+                if (calculatedWidth > 400) calculatedWidth = 400;
+
+                google.accounts.id.renderButton(
+                    btnDiv,
+                    {
+                        theme: "outline",
+                        size: "large",
+                        type: "standard",
+                        shape: "rectangular",
+                        text: "signup_with",
+                        logo_alignment: "left",
+                        width: calculatedWidth
                     }
-                } catch (err) {
-                    console.error("Google Sign-In initialization encountered an error:", err);
-                }
+                );
+
+                // renderButton() resolves asynchronously and stays empty when the page
+                // origin is not authorized for the client ID, so verify it actually drew.
+                setTimeout(function() {
+                    googleButtonRendered = btnDiv.childElementCount > 0 && btnDiv.offsetHeight > 0;
+                    if (!googleButtonRendered) {
+                        showGoogleFallback('renderButton() produced no button (origin most likely not authorized for this client ID).');
+                    }
+                }, 1500);
+            } catch (err) {
+                console.error("Google Sign-In initialization encountered an error:", err);
+                showGoogleFallback(err.message);
             }
         };
 
-        window.addEventListener('load', function() {
-            // Safe fallback in case onload did not fire or script was loaded from cache before onload event listener was set
-            if (typeof google !== 'undefined') {
+        // Poll instead of relying on the loader's onload, which can fire before this
+        // script has even defined initGoogleSignIn (the SDK tag is async).
+        (function waitForGoogleSdk(attemptsLeft) {
+            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
                 initGoogleSignIn();
+                return;
             }
-        });
+            if (attemptsLeft <= 0) {
+                showGoogleFallback('The Google Identity Services script never loaded (blocked by a network filter, ad blocker, or offline).');
+                return;
+            }
+            setTimeout(function() { waitForGoogleSdk(attemptsLeft - 1); }, 200);
+        })(50);
 
         function handleCredentialResponse(response) {
             // Received real Google identity token! Post it to our serverless backend
@@ -525,22 +570,18 @@
         function openSocialConsent(provider) {
             currentProvider = provider;
 
-            const isMobileApp = @json(session('is_mobile_app', false));
-
-            // If they clicked Google and are NOT in the mobile app, and the Google SDK is successfully loaded, prompt it!
-            if (provider === 'google' && !isMobileApp && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                try {
-                    google.accounts.id.prompt((notification) => {
-                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                            // Fall back to simulation if native prompt is skipped or blocked
-                            renderSimulationModal(provider);
-                        }
-                    });
-                } catch (e) {
-                    console.error("Native Google One-Tap prompt failed, falling back to simulator:", e);
-                    renderSimulationModal(provider);
+            // This used to call google.accounts.id.prompt() with a notification callback
+            // that inspected isNotDisplayed()/isSkippedMoment(). Those methods were removed
+            // in the FedCM migration and now throw from inside that async callback, where
+            // the surrounding try/catch cannot see them - so the click did nothing at all,
+            // with no dialog, no fallback and no error. Drive the rendered button instead.
+            if (provider === 'google' && !isMobileApp && googleButtonRendered) {
+                const realBtn = document.querySelector('#googleButtonDiv [role="button"]')
+                    || document.querySelector('#googleButtonDiv div[tabindex]');
+                if (realBtn) {
+                    realBtn.click();
+                    return;
                 }
-                return;
             }
 
             renderSimulationModal(provider);

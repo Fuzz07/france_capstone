@@ -38,8 +38,16 @@ class ProductController extends Controller
             'sku' => 'nullable|string|max:50',
             'category' => 'nullable|string|max:100',
             'price' => 'required|numeric|min:0',
+            // Bulk pricing is optional, but a bulk price only takes effect in the
+            // POS together with the quantity that unlocks it, so require the pair.
+            'bulk_price' => 'nullable|numeric|min:0|required_with:bulk_min_qty',
+            'bulk_min_qty' => 'nullable|integer|min:2|required_with:bulk_price',
             'quantity' => 'required|integer|min:0',
         ]);
+
+        // Blank inputs must clear the columns rather than store 0.
+        $data['bulk_price'] = $data['bulk_price'] ?? null;
+        $data['bulk_min_qty'] = $data['bulk_min_qty'] ?? null;
 
         if ($request->input('action') === 'edit') {
             $product = Product::findOrFail($request->input('id'));

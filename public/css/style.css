@@ -3494,6 +3494,52 @@ body.dashboard-body, body.dashboard-body * { box-sizing: border-box; }
   color: var(--color-primary);
 }
 
+/* Retail / bulk price pair on the POS product card */
+.pos-prod-pricing {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pos-prod-bulk {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.pos-bulk-tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  padding: 1px 6px;
+  border-radius: 20px;
+}
+
+.pos-bulk-min {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.cart-item-was {
+  margin-left: 4px;
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.cart-item-hint {
+  margin-left: 4px;
+  font-style: italic;
+  opacity: 0.75;
+}
+
 .btn-icon-add {
   width: 32px;
   height: 32px;

@@ -250,7 +250,16 @@
                             @endif
                         </div>
                         <div class="pos-prod-footer">
-                            <div class="pos-prod-price">&#8369;{{ number_format($product->price, 2) }}</div>
+                            <div class="pos-prod-pricing">
+                                <div class="pos-prod-price">&#8369;{{ number_format($product->price, 2) }}</div>
+                                @if($product->hasBulkPricing())
+                                    <div class="pos-prod-bulk">
+                                        <span class="pos-bulk-tag">Bulk</span>
+                                        &#8369;{{ number_format($product->bulk_price, 2) }}
+                                        <span class="pos-bulk-min">at {{ $product->bulk_min_qty }}+</span>
+                                    </div>
+                                @endif
+                            </div>
                             @if($product->quantity > 0)
                                 <form method="POST" action="{{ route('pos.add') }}">
                                     @csrf
@@ -291,8 +300,20 @@
                     @foreach($cart as $item)
                         <div class="cart-item">
                             <div class="cart-item-info">
-                                <div class="cart-item-name">{{ $item['name'] }}</div>
-                                <div class="cart-item-price">&#8369;{{ number_format($item['price'], 2) }} each</div>
+                                <div class="cart-item-name">
+                                    {{ $item['name'] }}
+                                    @if(!empty($item['is_bulk']))
+                                        <span class="pos-bulk-tag">Bulk</span>
+                                    @endif
+                                </div>
+                                <div class="cart-item-price">
+                                    &#8369;{{ number_format($item['price'], 2) }} each
+                                    @if(!empty($item['is_bulk']) && !empty($item['retail_price']))
+                                        <span class="cart-item-was">&#8369;{{ number_format($item['retail_price'], 2) }}</span>
+                                    @elseif(!empty($item['bulk_min_qty']))
+                                        <span class="cart-item-hint">{{ $item['bulk_min_qty'] - $item['qty'] }} more for bulk price</span>
+                                    @endif
+                                </div>
                             </div>
                             <div class="cart-qty-control">
                                 <form method="POST" action="{{ route('pos.updateCart') }}">
@@ -433,7 +454,7 @@
                             <tbody>
                                 @foreach($receipt['items'] as $item)
                                     <tr>
-                                        <td>{{ $item['name'] }}</td>
+                                        <td>{{ $item['name'] }}@if(!empty($item['is_bulk'])) <small>(bulk)</small>@endif</td>
                                         <td style="text-align:center;">{{ $item['qty'] }}</td>
                                         <td style="text-align:right;">&#8369;{{ number_format($item['price'], 2) }}</td>
                                         <td style="text-align:right;">&#8369;{{ number_format($item['price'] * $item['qty'], 2) }}</td>
@@ -482,7 +503,7 @@
                             <tbody>
                                 @foreach($receipt['items'] as $item)
                                     <tr>
-                                        <td>{{ $item['name'] }}</td>
+                                        <td>{{ $item['name'] }}@if(!empty($item['is_bulk'])) <small>(bulk)</small>@endif</td>
                                         <td style="text-align:center;">{{ $item['qty'] }}</td>
                                         <td style="text-align:right;">&#8369;{{ number_format($item['price'], 2) }}</td>
                                         <td style="text-align:right;">&#8369;{{ number_format($item['price'] * $item['qty'], 2) }}</td>

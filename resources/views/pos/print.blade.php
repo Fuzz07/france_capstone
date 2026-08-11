@@ -156,7 +156,7 @@
                 <tbody>
                     @foreach($receipt['items'] as $item)
                         <tr>
-                            <td>{{ $item['name'] }}</td>
+                            <td>{{ $item['name'] }}@if(!empty($item['is_bulk'])) <small>(bulk)</small>@endif</td>
                             <td style="text-align:center;">{{ $item['qty'] }}</td>
                             <td style="text-align:right;">&#8369;{{ number_format($item['price'], 2) }}</td>
                             <td style="text-align:right;">&#8369;{{ number_format($item['price'] * $item['qty'], 2) }}</td>
@@ -208,7 +208,7 @@
                 <tbody>
                     @foreach($receipt['items'] as $item)
                         <tr>
-                            <td>{{ $item['name'] }}</td>
+                            <td>{{ $item['name'] }}@if(!empty($item['is_bulk'])) <small>(bulk)</small>@endif</td>
                             <td style="text-align:center;">{{ $item['qty'] }}</td>
                             <td style="text-align:right;">&#8369;{{ number_format($item['price'], 2) }}</td>
                             <td style="text-align:right;">&#8369;{{ number_format($item['price'] * $item['qty'], 2) }}</td>

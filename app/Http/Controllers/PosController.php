@@ -16,6 +16,24 @@ class PosController extends Controller
         return $request->session()->get('cart', []);
     }
 
+    /**
+     * Build a cart line for the product at the given quantity. Called on every
+     * quantity change so a line flips between retail and bulk pricing as the
+     * cashier adds or removes stock.
+     */
+    protected function cartLine(Product $product, int $qty): array
+    {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'price' => $product->priceForQty($qty),
+            'qty' => $qty,
+            'is_bulk' => $product->isBulkQty($qty),
+            'retail_price' => (float) $product->price,
+            'bulk_min_qty' => $product->bulk_min_qty,
+        ];
+    }
+
     public function index(Request $request)
     {
         $search = $request->input('q', '');
@@ -58,12 +76,7 @@ class PosController extends Controller
             return back()->with('notice', 'Product is out of stock!')->with('noticeType', 'danger');
         }
 
-        $cart[$product->id] = [
-            'id' => $product->id,
-            'name' => $product->name,
-            'price' => $product->price,
-            'qty' => $newQty,
-        ];
+        $cart[$product->id] = $this->cartLine($product, $newQty);
 
         $request->session()->put('cart', $cart);
 
@@ -87,11 +100,16 @@ class PosController extends Controller
         $product = Product::find($productId);
 
         if ($request->action === 'increase' && $product) {
-            $cart[$productId]['qty'] = min($cart[$productId]['qty'] + 1, $product->quantity);
+            $newQty = min($cart[$productId]['qty'] + 1, $product->quantity);
+            $cart[$productId] = $this->cartLine($product, $newQty);
         } elseif ($request->action === 'decrease') {
-            $cart[$productId]['qty']--;
-            if ($cart[$productId]['qty'] <= 0) {
+            $newQty = $cart[$productId]['qty'] - 1;
+            if ($newQty <= 0 || !$product) {
                 unset($cart[$productId]);
+            } else {
+                // Re-priced on the way down too, so dropping below the bulk
+                // threshold puts the line back on the retail price.
+                $cart[$productId] = $this->cartLine($product, $newQty);
             }
         } elseif ($request->action === 'remove') {
             unset($cart[$productId]);

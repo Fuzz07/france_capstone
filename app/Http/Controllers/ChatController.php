@@ -10,6 +10,35 @@ use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
+    /** Live Messenger account customers are handed off to when the bot is not enough. */
+    private const MESSENGER_URL = 'https://m.me/JohhFranceDescartinQuijano';
+    private const MESSENGER_NAME = 'Johh France Descartin Quijano';
+
+    /** Number of customer messages after which the Messenger handoff is offered. */
+    private const HANDOFF_AFTER_MESSAGES = 3;
+
+    /**
+     * Count the customer's messages and decide whether it is time to offer a live
+     * Messenger handoff. Offered once per session; the bot keeps answering after it.
+     */
+    private function resolveHandoff(Request $request): ?array
+    {
+        $sent = $request->session()->increment('chatbot_customer_messages');
+
+        if ($sent < self::HANDOFF_AFTER_MESSAGES || $request->session()->get('chatbot_handoff_offered')) {
+            return null;
+        }
+
+        $request->session()->put('chatbot_handoff_offered', true);
+
+        return [
+            'name' => self::MESSENGER_NAME,
+            'url' => self::MESSENGER_URL,
+            'label' => 'Chat live on Messenger',
+            'text' => "💬 Want to talk to a real person?\nYou have asked a few questions already, so " . self::MESSENGER_NAME . " can help you live on Messenger for anything I miss.",
+        ];
+    }
+
     public function index()
     {
         if (!auth()->check()) {
@@ -114,11 +143,18 @@ class ChatController extends Controller
         if ($user->role === 'user') {
             $userMessage = $request->input('message');
             $botReply = $this->getBotResponse($userMessage);
-            
+
             if ($botReply) {
                 Message::create([
                     'user_name' => "Mera's Support Bot",
                     'message' => $botReply,
+                ]);
+            }
+
+            if ($handoff = $this->resolveHandoff($request)) {
+                Message::create([
+                    'user_name' => "Mera's Support Bot",
+                    'message' => $handoff['text'] . "\n" . $handoff['url'],
                 ]);
             }
         }
@@ -148,6 +184,7 @@ class ChatController extends Controller
         }
 
         $botData = $this->getDetailedBotResponse($userMessage);
+        $handoff = $this->resolveHandoff($request);
 
         // Save bot response to conversation if user is logged in
         if (auth()->check()) {
@@ -155,6 +192,13 @@ class ChatController extends Controller
                 'user_name' => "Mera's Support Bot",
                 'message' => $botData['reply'],
             ]);
+
+            if ($handoff) {
+                Message::create([
+                    'user_name' => "Mera's Support Bot",
+                    'message' => $handoff['text'] . "\n" . $handoff['url'],
+                ]);
+            }
         }
 
         return response()->json([
@@ -163,6 +207,7 @@ class ChatController extends Controller
             'reply' => $botData['reply'],
             'suggestions' => $botData['suggestions'],
             'products' => $botData['products'] ?? [],
+            'handoff' => $handoff,
         ]);
     }
 

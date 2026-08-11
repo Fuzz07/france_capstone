@@ -419,6 +419,46 @@
     border-color: #4f46e5 !important;
 }
 
+/* Live Messenger handoff card */
+.meras-handoff {
+    margin-top: 10px !important;
+    padding: 10px !important;
+    border: 1px solid #d8e3fe !important;
+    border-radius: 10px !important;
+    background: linear-gradient(135deg, #f5f8ff 0%, #eef4ff 100%) !important;
+}
+
+.meras-handoff-text {
+    font-size: 0.8rem !important;
+    line-height: 1.45 !important;
+    color: #1e293b !important;
+    margin-bottom: 9px !important;
+}
+
+.meras-handoff-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    width: 100% !important;
+    padding: 9px 12px !important;
+    border-radius: 8px !important;
+    background: linear-gradient(90deg, #0084ff 0%, #a033ff 100%) !important;
+    color: #fff !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+    box-shadow: 0 2px 6px rgba(0, 132, 255, 0.28) !important;
+    transition: filter 0.15s, transform 0.15s !important;
+}
+
+.meras-handoff-btn:hover {
+    filter: brightness(1.07) !important;
+    transform: translateY(-1px) !important;
+    color: #fff !important;
+    text-decoration: none !important;
+}
+
 /* Input */
 .meras-chat-form {
     display: flex !important;
@@ -562,7 +602,7 @@ function merasRemoveTyping() {
     if (t) t.remove();
 }
 
-function merasAppendBot(reply, products, suggestions) {
+function merasAppendBot(reply, products, suggestions, handoff) {
     merasRemoveTyping();
     var b = document.getElementById('merasChatBody');
     if (!b) return;
@@ -580,6 +620,17 @@ function merasAppendBot(reply, products, suggestions) {
                 '</div></div>';
         });
         html += '</div>';
+    }
+
+    // Offered once, after the customer has sent a few messages, so they can reach
+    // a real person on Messenger instead of looping through canned answers.
+    if (handoff && handoff.url) {
+        html += '<div class="meras-handoff">' +
+            '<div class="meras-handoff-text">' + merasEsc(handoff.text).replace(/\n/g, '<br>') + '</div>' +
+            '<a class="meras-handoff-btn" href="' + merasEsc(handoff.url) + '" target="_blank" rel="noopener noreferrer">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
+            '<path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.19.16.15.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.99-.88c.17-.07.36-.09.53-.04 1.05.29 2.17.44 3.32.44 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm5.6 7.28-2.94 4.66c-.47.74-1.47.93-2.18.4l-2.34-1.75a.6.6 0 0 0-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.18-.4l2.34 1.75c.21.16.51.16.72 0l3.16-2.4c.42-.32.97.18.69.63z"/>' +
+            '</svg>' + merasEsc(handoff.label) + '</a></div>';
     }
 
     var d = document.createElement('div');
@@ -622,13 +673,13 @@ function merasSubmit(e) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data && data.reply) {
-            merasAppendBot(data.reply, data.products || [], data.suggestions || []);
+            merasAppendBot(data.reply, data.products || [], data.suggestions || [], data.handoff || null);
         } else {
-            merasAppendBot("Sorry, I couldn't get a response right now. Please try again!", [], []);
+            merasAppendBot("Sorry, I couldn't get a response right now. Please try again!", [], [], null);
         }
     })
     .catch(function() {
-        merasAppendBot("⚠️ Could not connect. Check your internet connection and try again.", [], []);
+        merasAppendBot("⚠️ Could not connect. Check your internet connection and try again.", [], [], null);
     });
 }
 </script>
