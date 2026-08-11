@@ -6,6 +6,7 @@ use App\Models\Inquiry;
 use App\Mail\InquiryRepliedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class InquiryController extends Controller
@@ -86,7 +87,7 @@ class InquiryController extends Controller
                 Mail::to($inquiry->customer_email)->send(new InquiryRepliedMail($inquiry));
             }
         } catch (\Throwable $e) {
-            \Log::error("Failed to send inquiry reply email: " . $e->getMessage());
+            Log::error("Failed to send inquiry reply email: " . $e->getMessage());
         }
 
         // 2. Send Push Notification (FCM)
@@ -99,7 +100,7 @@ class InquiryController extends Controller
                 );
             }
         } catch (\Throwable $e) {
-            \Log::error("Failed to send inquiry FCM push notification: " . $e->getMessage());
+            Log::error("Failed to send inquiry FCM push notification: " . $e->getMessage());
         }
 
         return back()->with('notice', 'Customer response saved and inquiry marked as responded.')->with('noticeType', 'success');
@@ -220,20 +221,20 @@ class InquiryController extends Controller
                 curl_close($ch);
 
                 if ($err) {
-                    \Log::error("FCM HTTP v1 cURL error: " . $err);
+                    Log::error("FCM HTTP v1 cURL error: " . $err);
                 } else {
-                    \Log::info("FCM HTTP v1 response: " . $response);
+                    Log::info("FCM HTTP v1 response: " . $response);
                 }
                 return;
             } catch (\Throwable $e) {
-                \Log::error("FCM HTTP v1 failed: " . $e->getMessage() . ". Falling back to Legacy API.");
+                Log::error("FCM HTTP v1 failed: " . $e->getMessage() . ". Falling back to Legacy API.");
             }
         }
 
         // 2. Legacy API Fallback
         $serverKey = env('FCM_SERVER_KEY');
         if (!$serverKey) {
-            \Log::warning("FCM_SERVER_KEY is not configured in .env and firebase-service-account.json is missing. Skipping push notification.");
+            Log::warning("FCM_SERVER_KEY is not configured in .env and firebase-service-account.json is missing. Skipping push notification.");
             return;
         }
 
@@ -272,9 +273,9 @@ class InquiryController extends Controller
         curl_close($ch);
 
         if ($err) {
-            \Log::error("Legacy FCM cURL error: " . $err);
+            Log::error("Legacy FCM cURL error: " . $err);
         } else {
-            \Log::info("Legacy FCM response: " . $response);
+            Log::info("Legacy FCM response: " . $response);
         }
     }
 

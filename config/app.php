@@ -43,9 +43,13 @@ return [
         App\Providers\AppServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
     ],
-    'aliases' => [
-        'App' => Illuminate\Support\Facades\App::class,
-        'Auth' => Illuminate\Support\Facades\Auth::class,
-        'Route' => Illuminate\Support\Facades\Route::class,
-    ],
+    /*
+     * Root-namespace facade aliases. Defining only a hand-picked few replaces the
+     * framework defaults entirely, which is why root-namespace Log calls died
+     * with "Class \"Log\" not found". Start from Laravel's full default list so every
+     * documented facade alias resolves.
+     */
+    'aliases' => Illuminate\Support\Facades\Facade::defaultAliases()->merge([
+        // 'ExampleClass' => App\Example\ExampleClass::class,
+    ])->toArray(),
 ];
