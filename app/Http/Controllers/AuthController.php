@@ -386,7 +386,27 @@ class AuthController extends Controller
             return "<h3>SMTP Connection Success!</h3>The email was successfully sent to " . e(Auth::user()->email) . "!";
         } catch (\Throwable $e) {
             Log::error('SMTP Test Mail error: ' . $e->getMessage());
-            return "<h3>SMTP Mail Sending Failed!</h3>Please check application log files for error trace.";
+
+            // Surfaced inline because production runs with APP_DEBUG=false, which
+            // would otherwise leave an admin with no way to see why mail fails.
+            // Admin-only route; the password itself is never echoed, only its length.
+            $config = [
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'username' => config('mail.mailers.smtp.username'),
+                'password length' => strlen((string) config('mail.mailers.smtp.password')) . ' chars (a Gmail app password is 16)',
+                'from address' => config('mail.from.address') . ' (Gmail requires this to match the username)',
+            ];
+
+            $rows = '';
+            foreach ($config as $label => $value) {
+                $rows .= '<tr><td><strong>' . e($label) . '</strong></td><td>' . e($value) . '</td></tr>';
+            }
+
+            return "<h3>SMTP Mail Sending Failed!</h3>"
+                . "<p><strong>Reason:</strong></p><pre>" . e($e->getMessage()) . "</pre>"
+                . "<p><strong>Current mail configuration:</strong></p>"
+                . "<table cellpadding=\"6\" border=\"1\" cellspacing=\"0\">" . $rows . "</table>";
         }
     }
 }

@@ -23,6 +23,18 @@ Route::get('/download/android-app', function () {
 })->name('mobile.download');
 Route::post('/inquiries', [InquiryController::class, 'store'])->name('inquiries.store');
 
+// Reachability probe polled by partials/offline-overlay. Session middleware is
+// excluded so the poll never queues behind the file-session lock held by a real
+// request, and so a poll cannot keep an idle session alive forever.
+Route::get('/connection-check', function () {
+    return response()->noContent()
+        ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+})->withoutMiddleware([
+    \Illuminate\Session\Middleware\StartSession::class,
+    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    \App\Http\Middleware\VerifyCsrfToken::class,
+])->name('connection.check');
+
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
