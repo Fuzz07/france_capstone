@@ -105,6 +105,189 @@
         white-space: nowrap;
     }
 
+    /* CSV import modal */
+    .csv-error-report {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: var(--radius-sm);
+        padding: 12px 16px;
+        margin-bottom: 16px;
+    }
+    .csv-error-report-head {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #92400e;
+        margin-bottom: 6px;
+    }
+    .csv-error-report ul {
+        margin: 0;
+        padding-left: 26px;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+    .csv-error-report li {
+        font-size: 0.78rem;
+        color: #78350f;
+        line-height: 1.6;
+    }
+
+    .csv-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1300;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.62);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.18s ease, visibility 0.18s ease;
+    }
+    .csv-modal-overlay.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+    .csv-modal {
+        width: min(470px, 100%);
+        background: var(--color-surface);
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 28px 70px rgba(15, 23, 42, 0.35);
+        padding: 26px;
+        transform: translateY(12px) scale(0.97);
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .csv-modal-overlay.open .csv-modal { transform: translateY(0) scale(1); }
+    .csv-modal-head {
+        display: flex;
+        gap: 13px;
+        align-items: flex-start;
+        margin-bottom: 18px;
+    }
+    .csv-modal-icon {
+        flex-shrink: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-primary);
+        background: var(--color-primary-light);
+        border: 1px solid var(--color-primary-mid);
+    }
+    .csv-modal-head h3 {
+        margin: 0 0 3px;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--color-secondary);
+    }
+    .csv-modal-head p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+        line-height: 1.45;
+    }
+
+    .csv-dropzone {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 26px 18px;
+        border: 2px dashed var(--color-border-strong);
+        border-radius: var(--radius-md);
+        background: #f8fafc;
+        cursor: pointer;
+        text-align: center;
+        transition: var(--transition-fast);
+    }
+    .csv-dropzone:hover,
+    .csv-dropzone.is-dragging {
+        border-color: var(--color-primary);
+        background: var(--color-primary-light);
+    }
+    .csv-dropzone.has-file {
+        border-style: solid;
+        border-color: var(--color-success);
+        background: var(--color-success-light);
+    }
+    .csv-dropzone input[type="file"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .csv-dropzone svg { color: var(--color-text-subtle); margin-bottom: 3px; }
+    .csv-dropzone.has-file svg { color: var(--color-success); }
+    .csv-dropzone-label {
+        font-size: 0.87rem;
+        font-weight: 700;
+        color: var(--color-secondary);
+        word-break: break-all;
+    }
+    .csv-dropzone-hint {
+        font-size: 0.74rem;
+        color: var(--color-text-muted);
+    }
+
+    .csv-format-note {
+        margin-top: 14px;
+        padding: 13px 15px;
+        border-radius: var(--radius-sm);
+        background: #f8fafc;
+        border: 1px solid var(--color-border);
+    }
+    .csv-format-note strong.csv-format-title {
+        display: block;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: var(--color-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 7px;
+    }
+    .csv-format-note code {
+        display: block;
+        padding: 8px 11px;
+        margin-bottom: 9px;
+        border-radius: 6px;
+        background: #0f172a;
+        color: #a5f3fc;
+        font-family: 'Courier New', monospace;
+        font-size: 0.78rem;
+        letter-spacing: 0.3px;
+    }
+    .csv-format-note p {
+        margin: 0;
+        font-size: 0.76rem;
+        color: var(--color-text-muted);
+        line-height: 1.6;
+    }
+
+    .csv-modal-actions {
+        display: flex;
+        gap: 9px;
+        margin-top: 18px;
+    }
+    .csv-modal-actions .btn { flex: 1; }
+    .csv-modal-actions .btn:disabled { opacity: 0.65; cursor: progress; }
+
+    @media (max-width: 520px) {
+        .csv-modal { padding: 22px 18px; }
+        .csv-modal-actions { flex-direction: column-reverse; }
+    }
+
     /* SVG action buttons */
     .action-icon-btn {
         display: inline-flex;
@@ -165,6 +348,10 @@
         <p>Manage your product catalog, stock levels, and pricing.</p>
     </div>
     <div class="page-actions">
+        <button type="button" class="btn btn-primary" id="csvImportOpenBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Import CSV
+        </button>
         <a href="{{ route('products.index') }}" class="btn btn-outline">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
             Refresh
@@ -174,6 +361,20 @@
 
 @if(session('notice'))
     <div class="alert alert-{{ session('noticeType', 'success') }}">{{ session('notice') }}</div>
+@endif
+
+@if(session('import_errors') && count(session('import_errors')))
+    <div class="csv-error-report">
+        <div class="csv-error-report-head">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            These rows were skipped
+        </div>
+        <ul>
+            @foreach(session('import_errors') as $importError)
+                <li>{{ $importError }}</li>
+            @endforeach
+        </ul>
+    </div>
 @endif
 
 <div class="inv-layout">
@@ -389,4 +590,121 @@
         @endif
     </div>
 </div>
+
+<!-- CSV Import Modal -->
+<div class="csv-modal-overlay" id="csvImportModal" aria-hidden="true">
+    <div class="csv-modal" role="dialog" aria-modal="true" aria-labelledby="csvImportTitle">
+        <div class="csv-modal-head">
+            <div class="csv-modal-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+            </div>
+            <div>
+                <h3 id="csvImportTitle">Import Products from CSV</h3>
+                <p>Add or update your catalog in bulk from a spreadsheet.</p>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('products.import') }}" enctype="multipart/form-data" id="csvImportForm">
+            @csrf
+            <label class="csv-dropzone" id="csvDropzone">
+                <input type="file" name="csv_file" id="csvFileInput" accept=".csv,.txt,text/csv" required>
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="csv-dropzone-label" id="csvFileName">Choose a CSV file</span>
+                <span class="csv-dropzone-hint">or drag it here &bull; up to 2 MB</span>
+            </label>
+
+            <div class="csv-format-note">
+                <strong class="csv-format-title">Required columns</strong>
+                <code>name,price,quantity</code>
+                <p>
+                    The first row must hold the column names. <strong>Do not include a SKU column</strong> &mdash;
+                    every new product is given one automatically from its name (for example
+                    <em>Coca-Cola 1.5L</em> becomes <em>COC-001</em>). A product whose name is already in
+                    the catalog has its price and stock updated, keeping the SKU it already has.
+                </p>
+            </div>
+
+            <div class="csv-modal-actions">
+                <button type="button" class="btn btn-secondary" id="csvCancelBtn">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="csvSubmitBtn">Import Products</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modal = document.getElementById('csvImportModal');
+        var openBtn = document.getElementById('csvImportOpenBtn');
+        var cancelBtn = document.getElementById('csvCancelBtn');
+        var dropzone = document.getElementById('csvDropzone');
+        var fileInput = document.getElementById('csvFileInput');
+        var fileName = document.getElementById('csvFileName');
+        var form = document.getElementById('csvImportForm');
+        var submitBtn = document.getElementById('csvSubmitBtn');
+
+        function open() {
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('logout-modal-open');
+        }
+
+        function close() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('logout-modal-open');
+        }
+
+        function showSelection() {
+            if (fileInput.files.length) {
+                fileName.textContent = fileInput.files[0].name;
+                dropzone.classList.add('has-file');
+            } else {
+                fileName.textContent = 'Choose a CSV file';
+                dropzone.classList.remove('has-file');
+            }
+        }
+
+        openBtn.addEventListener('click', open);
+        cancelBtn.addEventListener('click', close);
+
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) close();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && modal.classList.contains('open')) close();
+        });
+
+        fileInput.addEventListener('change', showSelection);
+
+        ['dragenter', 'dragover'].forEach(function (type) {
+            dropzone.addEventListener(type, function (event) {
+                event.preventDefault();
+                dropzone.classList.add('is-dragging');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(function (type) {
+            dropzone.addEventListener(type, function (event) {
+                event.preventDefault();
+                dropzone.classList.remove('is-dragging');
+            });
+        });
+
+        dropzone.addEventListener('drop', function (event) {
+            if (event.dataTransfer.files.length) {
+                fileInput.files = event.dataTransfer.files;
+                showSelection();
+            }
+        });
+
+        // A large sheet takes a moment; block the double submit that would
+        // otherwise run the whole import twice.
+        form.addEventListener('submit', function () {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Importing...';
+        });
+    })();
+</script>
 @endsection
