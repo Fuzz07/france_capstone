@@ -14,6 +14,9 @@ class ProductCsvImportTest extends TestCase
 {
     use RefreshDatabase;
 
+    // NOTE: price is a decimal column. SQLite (tests) returns a float and MySQL
+    // (production) returns a string, so price assertions compare numerically.
+
     private function admin(): User
     {
         return User::create([
@@ -47,7 +50,7 @@ class ProductCsvImportTest extends TestCase
         $this->assertSame(2, Product::count());
 
         $cola = Product::where('name', 'Coca-Cola 1.5L')->first();
-        $this->assertSame('85.50', $cola->price);
+        $this->assertEquals(85.50, (float) $cola->price);
         $this->assertSame(24, $cola->quantity);
         $this->assertSame('COC-001', $cola->sku, 'The SKU should come from the product name.');
 
@@ -86,7 +89,7 @@ class ProductCsvImportTest extends TestCase
 
         $product = Product::first();
         $this->assertSame('OLD-999', $product->sku, 'The existing SKU must be preserved.');
-        $this->assertSame('12.50', $product->price);
+        $this->assertEquals(12.50, (float) $product->price);
         $this->assertSame(40, $product->quantity);
         $this->assertSame('School Supplies', $product->category, 'Untouched columns must survive.');
     }
@@ -99,7 +102,7 @@ class ProductCsvImportTest extends TestCase
         $product = Product::first();
         $this->assertNotNull($product, 'Header aliases should have been recognised.');
         $this->assertSame('Notebook', $product->name);
-        $this->assertSame('45.00', $product->price);
+        $this->assertEquals(45.00, (float) $product->price);
         $this->assertSame(12, $product->quantity);
     }
 
@@ -110,7 +113,7 @@ class ProductCsvImportTest extends TestCase
 
         $product = Product::first();
         $this->assertSame('Eraser', $product->name);
-        $this->assertSame('3.25', $product->price);
+        $this->assertEquals(3.25, (float) $product->price);
         $this->assertSame(7, $product->quantity);
     }
 
@@ -130,7 +133,7 @@ class ProductCsvImportTest extends TestCase
     {
         $this->import("name,price,quantity\n\"Rice Sack 25kg\",\"PHP 1,250.00\",4\n");
 
-        $this->assertSame('1250.00', Product::first()->price);
+        $this->assertEquals(1250.00, (float) Product::first()->price);
     }
 
     /** @test */
