@@ -292,7 +292,8 @@
                     <video id="galleryMainVideo" class="gallery-main-video"
                         src="{{ request()->getBaseUrl() }}/images/shop_video.mp4"
                         poster="{{ request()->getBaseUrl() }}/images/shop_video_poster.jpg"
-                        controls playsinline muted preload="none" hidden></video>
+                        controls playsinline muted preload="metadata" hidden></video>
+                    <div class="gallery-video-status" id="galleryVideoStatus" hidden></div>
                     <div class="gallery-img-caption" id="galleryCaption"></div>
                 </div>
                 <button class="gallery-nav-btn gallery-next" onclick="shiftGallery(1)" aria-label="Next photo">
@@ -439,6 +440,69 @@
             ];
             let galleryCurrent = 0;
 
+            // ── Reel loading / failure feedback ────────────────
+            // The file is a couple of megabytes, so on a slow link there is a real
+            // wait before the first frame. Say so, and say it plainly when it fails
+            // outright, rather than leaving a poster that looks broken.
+            const galleryVideoStatus = document.getElementById('galleryVideoStatus');
+
+            function showVideoStatus(message, isError) {
+                galleryVideoStatus.textContent = '';
+
+                if (!isError) {
+                    const spinner = document.createElement('div');
+                    spinner.className = 'gallery-video-spinner';
+                    galleryVideoStatus.appendChild(spinner);
+                }
+
+                const label = document.createElement('div');
+                label.textContent = message;
+                galleryVideoStatus.appendChild(label);
+
+                galleryVideoStatus.classList.toggle('is-error', Boolean(isError));
+                galleryVideoStatus.hidden = false;
+            }
+
+            function hideVideoStatus() {
+                galleryVideoStatus.hidden = true;
+            }
+
+            (function wireVideoStatus() {
+                const video = document.getElementById('galleryMainVideo');
+
+                function reportVideoError() {
+                    const reasons = {
+                        1: 'loading was cancelled',
+                        2: 'a network error occurred',
+                        3: 'the video could not be decoded',
+                        4: 'the video is missing or in an unsupported format',
+                    };
+                    const code = video.error ? video.error.code : 0;
+
+                    showVideoStatus('Sorry, the shop video could not load - ' + (reasons[code] || 'unknown error') + '.', true);
+                }
+
+                video.addEventListener('loadstart', function () {
+                    showVideoStatus('Loading video...', false);
+                });
+                video.addEventListener('waiting', function () {
+                    showVideoStatus('Buffering...', false);
+                });
+                video.addEventListener('canplay', hideVideoStatus);
+                video.addEventListener('playing', hideVideoStatus);
+                video.addEventListener('error', reportVideoError);
+
+                // preload starts the fetch while the document is still parsing, so
+                // it can succeed or fail before this script ever runs. Catch up on
+                // whatever already happened instead of waiting for an event that
+                // has been and gone.
+                if (video.error) {
+                    reportVideoError();
+                } else if (video.networkState === HTMLMediaElement.NETWORK_LOADING && video.readyState < 3) {
+                    showVideoStatus('Loading video...', false);
+                }
+            })();
+
             function openGallery(index) {
                 galleryCurrent = index ?? 0;
                 const modal = document.getElementById('galleryModal');
@@ -495,6 +559,7 @@
                 } else {
                     mainVideo.pause();
                     mainVideo.hidden = true;
+                    hideVideoStatus();
                     mainImg.hidden = false;
                     mainImg.style.opacity = '0';
                     setTimeout(() => {

@@ -1349,6 +1349,53 @@ select.form-control-lp {
   display: none;
 }
 
+/* Loading / failure state for the reel. Without this a slow or broken fetch
+   just leaves the poster sitting there with no hint that anything is wrong. */
+.gallery-video-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(2, 6, 23, 0.72);
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.5;
+  /* Never intercept a click meant for the video controls underneath. */
+  pointer-events: none;
+}
+
+.gallery-video-status[hidden] {
+  display: none;
+}
+
+.gallery-video-status.is-error {
+  background: rgba(2, 6, 23, 0.92);
+  color: #fecaca;
+}
+
+.gallery-video-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(226, 232, 240, 0.25);
+  border-top-color: #e2e8f0;
+  border-radius: 50%;
+  animation: gallerySpin 0.8s linear infinite;
+}
+
+@keyframes gallerySpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-video-spinner { animation: none; }
+}
+
 .gallery-thumb-video {
   position: relative;
 }
