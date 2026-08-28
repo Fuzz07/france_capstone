@@ -475,6 +475,9 @@
                 const mainImg = document.getElementById('galleryMainImg');
                 const mainVideo = document.getElementById('galleryMainVideo');
                 const caption = document.getElementById('galleryCaption');
+                const stage = mainVideo.parentElement;
+
+                stage.classList.toggle('is-video', slide.type === 'video');
 
                 if (slide.type === 'video') {
                     mainImg.hidden = true;

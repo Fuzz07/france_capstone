@@ -1403,6 +1403,17 @@ select.form-control-lp {
   padding: 20px 14px 10px 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
+  /* The caption sits over the video's native control bar. Without this it eats
+     the click meant for the play button and the reel simply never starts. */
+  pointer-events: none;
+}
+
+/* Lift the caption clear of the controls while a reel is on the stage, so the
+   scrubber and buttons stay readable as well as clickable. */
+.gallery-main-img-wrapper.is-video .gallery-img-caption {
+  bottom: 48px;
+  background: none;
+  text-shadow: 0 1px 4px rgba(2, 6, 23, 0.95);
 }
 
 /* Nav buttons */
