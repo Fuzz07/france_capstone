@@ -68,6 +68,8 @@ Route::post('/chat/bot-response', [ChatController::class, 'botResponse'])->name(
 // Administrative & Management Routes (Strict Admin Role Required)
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Registered before the resource so it is not shadowed by products/{product}.
+    Route::post('/products/import', [ProductController::class, 'import'])->name('products.import');
     Route::resource('products', ProductController::class)->except(['show']);
 
     Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
