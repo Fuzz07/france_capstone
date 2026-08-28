@@ -20,6 +20,41 @@ class ProductController extends Controller
         'name' => ['name', 'product', 'product name', 'products', 'item', 'item name', 'description'],
         'price' => ['price', 'unit price', 'srp', 'amount', 'cost', 'selling price'],
         'quantity' => ['quantity', 'qty', 'stock', 'stocks', 'on hand', 'stock qty', 'quantities'],
+        'unit' => ['unit', 'units', 'uom', 'unit of measure', 'measure', 'packaging'],
+    ];
+
+    /** The unit column is optional; the rest of COLUMN_ALIASES must be present. */
+    private const REQUIRED_COLUMNS = ['name', 'price', 'quantity'];
+
+    /** Fallback for a row that names no unit at all. */
+    private const DEFAULT_UNIT = 'pcs';
+
+    /**
+     * Folds the spellings a stock sheet uses into one canonical abbreviation, so
+     * "Piece", "pieces" and "pc" all end up as "pcs". Anything not listed here is
+     * kept exactly as typed rather than rejected.
+     */
+    private const UNIT_ALIASES = [
+        'pcs' => ['pc', 'pcs', 'piece', 'pieces', 'pieze', 'ea', 'each'],
+        'rms' => ['rm', 'rms', 'ream', 'reams'],
+        'pck' => ['pck', 'pcks', 'pack', 'packs', 'pk', 'pks', 'package', 'packages'],
+        'box' => ['box', 'boxes', 'bx'],
+        'set' => ['set', 'sets'],
+        'pair' => ['pair', 'pairs', 'pr', 'prs'],
+        'doz' => ['doz', 'dz', 'dozen', 'dozens'],
+        'bdl' => ['bdl', 'bundle', 'bundles'],
+        'roll' => ['roll', 'rolls'],
+        'btl' => ['btl', 'bottle', 'bottles'],
+        'can' => ['can', 'cans', 'tin', 'tins'],
+        'sack' => ['sack', 'sacks'],
+        'pad' => ['pad', 'pads'],
+        'tube' => ['tube', 'tubes'],
+        'kg' => ['kg', 'kgs', 'kilo', 'kilos', 'kilogram', 'kilograms'],
+        'g' => ['g', 'gr', 'gram', 'grams'],
+        'l' => ['l', 'lt', 'liter', 'liters', 'litre', 'litres'],
+        'ml' => ['ml', 'milliliter', 'milliliters', 'millilitre', 'millilitres'],
+        'm' => ['m', 'meter', 'meters', 'metre', 'metres'],
+        'yd' => ['yd', 'yds', 'yard', 'yards'],
     ];
 
     /** Next free sequence per SKU prefix, so a large import stays linear. */
@@ -54,6 +89,7 @@ class ProductController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:200',
             'sku' => 'nullable|string|max:50',
+            'unit' => 'nullable|string|max:20',
             'category' => 'nullable|string|max:100',
             'price' => 'required|numeric|min:0',
             // Bulk pricing is optional, but a bulk price only takes effect in the
@@ -62,6 +98,8 @@ class ProductController extends Controller
             'bulk_min_qty' => 'nullable|integer|min:2|required_with:bulk_price',
             'quantity' => 'required|integer|min:0',
         ]);
+
+        $data['unit'] = $this->normaliseUnit((string) ($data['unit'] ?? ''));
 
         // Blank inputs must clear the columns rather than store 0.
         $data['bulk_price'] = $data['bulk_price'] ?? null;
@@ -81,7 +119,8 @@ class ProductController extends Controller
     }
 
     /**
-     * Bulk-loads products from a CSV holding name, price and quantity.
+     * Bulk-loads products from a CSV holding name, price and quantity, plus an
+     * optional unit column (pcs, rms, pcks...) that defaults to pcs.
      *
      * The sheet never carries a SKU column. A row whose name already exists
      * updates that product and keeps the SKU it already has; anything new gets a
@@ -124,7 +163,10 @@ class ProductController extends Controller
         $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]);
 
         $columns = $this->mapColumns($header);
-        $missing = array_keys(array_filter($columns, fn ($index) => $index === null));
+        $missing = array_values(array_filter(
+            self::REQUIRED_COLUMNS,
+            fn ($column) => $columns[$column] === null
+        ));
 
         if ($missing !== []) {
             fclose($handle);
@@ -159,6 +201,9 @@ class ProductController extends Controller
                 $name = trim((string) ($row[$columns['name']] ?? ''));
                 $rawPrice = trim((string) ($row[$columns['price']] ?? ''));
                 $rawQuantity = trim((string) ($row[$columns['quantity']] ?? ''));
+                $unit = $this->normaliseUnit(
+                    $columns['unit'] === null ? '' : trim((string) ($row[$columns['unit']] ?? ''))
+                );
 
                 if ($name === '') {
                     $errors[] = 'Row ' . $line . ': the name is blank.';
@@ -185,6 +230,7 @@ class ProductController extends Controller
                     $existing->update([
                         'price' => $price,
                         'quantity' => (int) $quantity,
+                        'unit' => $unit,
                     ]);
                     $updated++;
                     continue;
@@ -193,6 +239,7 @@ class ProductController extends Controller
                 Product::create([
                     'name' => mb_substr($name, 0, 200),
                     'sku' => $this->generateSku($name),
+                    'unit' => $unit,
                     'price' => $price,
                     'quantity' => (int) $quantity,
                 ]);
@@ -297,6 +344,28 @@ class ProductController extends Controller
         $cell = str_replace(['_', '-'], ' ', trim(mb_strtolower($cell)));
 
         return trim(preg_replace('/\s+/', ' ', $cell));
+    }
+
+    /**
+     * Folds a unit cell to its canonical abbreviation ("Pieces" -> "pcs"). An
+     * unrecognised unit is kept as typed so an unusual one still imports, and a
+     * blank cell falls back to the default.
+     */
+    private function normaliseUnit(string $value): string
+    {
+        $cleaned = trim(preg_replace('/[.\s]+/', ' ', mb_strtolower($value)));
+
+        if ($cleaned === '') {
+            return self::DEFAULT_UNIT;
+        }
+
+        foreach (self::UNIT_ALIASES as $canonical => $aliases) {
+            if (in_array($cleaned, $aliases, true)) {
+                return $canonical;
+            }
+        }
+
+        return mb_substr($cleaned, 0, 20);
     }
 
     /**

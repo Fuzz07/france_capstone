@@ -43,17 +43,17 @@
             <div class="hero-image-column">
                 <div class="hero-deco-blob"></div>
                 <div class="hero-image-wrapper hero-image-clickable" id="heroImageBtn" onclick="openGallery(0)"
-                    title="Click to view shop photos" role="button" tabindex="0" aria-label="View shop gallery">
-                    <img src="{{ request()->getBaseUrl() }}/images/hero_merchandise.png"
+                    title="Click to watch the shop video and view photos" role="button" tabindex="0"
+                    aria-label="Watch the shop video and view the photo gallery">
+                    <img src="{{ request()->getBaseUrl() }}/images/hero_merchandise.jpg"
                         alt="Mera's Merchandise Storefront Showcase">
                     <div class="gallery-hint-badge">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
+                            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                         </svg>
-                        View Shop Photos
+                        Watch Our Shop Video
                     </div>
                 </div>
             </div>
@@ -289,6 +289,10 @@
                 </button>
                 <div class="gallery-main-img-wrapper">
                     <img id="galleryMainImg" src="" alt="Shop photo" class="gallery-main-img">
+                    <video id="galleryMainVideo" class="gallery-main-video"
+                        src="{{ request()->getBaseUrl() }}/images/shop_video.mp4"
+                        poster="{{ request()->getBaseUrl() }}/images/shop_video_poster.jpg"
+                        controls playsinline muted preload="none" hidden></video>
                     <div class="gallery-img-caption" id="galleryCaption"></div>
                 </div>
                 <button class="gallery-nav-btn gallery-next" onclick="shiftGallery(1)" aria-label="Next photo">
@@ -299,16 +303,20 @@
                 </button>
             </div>
             <div class="gallery-thumbs">
-                <div class="gallery-thumb active" onclick="setGallerySlide(0)">
-                    <img src="{{ request()->getBaseUrl() }}/images/shop_gallery_1.jpg" alt="Store interior">
+                <div class="gallery-thumb gallery-thumb-video active" onclick="setGallerySlide(0)">
+                    <img src="{{ request()->getBaseUrl() }}/images/shop_video_poster.jpg" alt="Shop video tour">
+                    <span class="gallery-thumb-badge">Video</span>
                 </div>
                 <div class="gallery-thumb" onclick="setGallerySlide(1)">
-                    <img src="{{ request()->getBaseUrl() }}/images/shop_gallery_2.jpg" alt="School supplies display">
+                    <img src="{{ request()->getBaseUrl() }}/images/shop_gallery_1.jpg" alt="Store interior">
                 </div>
                 <div class="gallery-thumb" onclick="setGallerySlide(2)">
-                    <img src="{{ request()->getBaseUrl() }}/images/shop_gallery_3.jpg" alt="Fabric and textiles">
+                    <img src="{{ request()->getBaseUrl() }}/images/shop_gallery_2.jpg" alt="School supplies display">
                 </div>
                 <div class="gallery-thumb" onclick="setGallerySlide(3)">
+                    <img src="{{ request()->getBaseUrl() }}/images/shop_gallery_3.jpg" alt="Fabric and textiles">
+                </div>
+                <div class="gallery-thumb" onclick="setGallerySlide(4)">
                     <img src="{{ request()->getBaseUrl() }}/images/shop_gallery_4.jpg" alt="Store front">
                 </div>
             </div>
@@ -317,6 +325,7 @@
                 <span class="gallery-dot" onclick="setGallerySlide(1)"></span>
                 <span class="gallery-dot" onclick="setGallerySlide(2)"></span>
                 <span class="gallery-dot" onclick="setGallerySlide(3)"></span>
+                <span class="gallery-dot" onclick="setGallerySlide(4)"></span>
             </div>
         </div>
     </div>
@@ -422,6 +431,7 @@
 
             // ── Shop Gallery Lightbox ──────────────────────────
             const gallerySlides = [
+                { type: 'video', caption: 'Take a walk through Mera's — Stall No. 18, Bantayan Public Market' },
                 { src: '/images/shop_gallery_1.jpg', caption: 'Store interior — fabrics, school supplies & general merchandise' },
                 { src: '/images/shop_gallery_2.jpg', caption: 'School supplies — notebooks, pens, folders & more' },
                 { src: '/images/shop_gallery_3.jpg', caption: 'Fabrics & textiles — a wide range of colors and patterns' },
@@ -443,6 +453,7 @@
                 modal.classList.remove('open');
                 modal.setAttribute('aria-hidden', 'true');
                 document.body.style.overflow = '';
+                document.getElementById('galleryMainVideo').pause();
             }
 
             function handleGalleryOverlayClick(e) {
@@ -462,13 +473,30 @@
             function renderGallerySlide() {
                 const slide = gallerySlides[galleryCurrent];
                 const mainImg = document.getElementById('galleryMainImg');
+                const mainVideo = document.getElementById('galleryMainVideo');
                 const caption = document.getElementById('galleryCaption');
-                mainImg.style.opacity = '0';
-                setTimeout(() => {
-                    mainImg.src = slide.src;
+
+                if (slide.type === 'video') {
+                    mainImg.hidden = true;
+                    mainVideo.hidden = false;
                     caption.textContent = slide.caption;
-                    mainImg.style.opacity = '1';
-                }, 120);
+                    // Muted so the browser allows it to roll on its own; the controls
+                    // are there for anyone who wants the sound.
+                    mainVideo.currentTime = 0;
+                    const started = mainVideo.play();
+                    if (started) started.catch(() => {});
+                } else {
+                    mainVideo.pause();
+                    mainVideo.hidden = true;
+                    mainImg.hidden = false;
+                    mainImg.style.opacity = '0';
+                    setTimeout(() => {
+                        mainImg.src = slide.src;
+                        caption.textContent = slide.caption;
+                        mainImg.style.opacity = '1';
+                    }, 120);
+                }
+
                 document.querySelectorAll('.gallery-thumb').forEach((t, i) => t.classList.toggle('active', i === galleryCurrent));
                 document.querySelectorAll('.gallery-dot').forEach((d, i) => d.classList.toggle('active', i === galleryCurrent));
             }

@@ -1331,6 +1331,59 @@ select.form-control-lp {
   transition: opacity 0.2s ease;
 }
 
+/* The shop reel is shot vertically, so it is fitted inside the 16:9 stage
+   rather than cropped; the wrapper's dark background becomes the pillarbox. */
+.gallery-main-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #0f172a;
+}
+
+.gallery-thumb-video {
+  position: relative;
+}
+
+.gallery-thumb-video::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-40%, -50%);
+  border-left: 13px solid rgba(255, 255, 255, 0.95);
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+.gallery-thumb-video::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  pointer-events: none;
+}
+
+.gallery-thumb-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  text-align: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
 .gallery-img-caption {
   position: absolute;
   bottom: 0;
@@ -1369,7 +1422,7 @@ select.form-control-lp {
 /* Thumbnail strip */
 .gallery-thumbs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
   margin-bottom: 14px;
 }

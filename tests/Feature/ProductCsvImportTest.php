@@ -17,14 +17,17 @@ class ProductCsvImportTest extends TestCase
     // NOTE: price is a decimal column. SQLite (tests) returns a float and MySQL
     // (production) returns a string, so price assertions compare numerically.
 
+    // firstOrCreate so a test may run more than one import in a row.
     private function admin(): User
     {
-        return User::create([
-            'name' => 'Store Admin',
-            'email' => 'csv.admin@example.com',
-            'password' => Hash::make('password123'),
-            'role' => 'admin',
-        ]);
+        return User::firstOrCreate(
+            ['email' => 'csv.admin@example.com'],
+            [
+                'name' => 'Store Admin',
+                'password' => Hash::make('password123'),
+                'role' => 'admin',
+            ]
+        );
     }
 
     private function csv(string $contents, string $name = 'products.csv'): UploadedFile
@@ -206,12 +209,165 @@ class ProductCsvImportTest extends TestCase
     }
 
     /** @test */
+    public function it_imports_the_unit_column()
+    {
+        $this->import(
+            "name,price,quantity,unit
+"
+            . "Bond Paper A4,320,10,rms
+"
+            . "Ballpen,12,50,pcs
+"
+            . "Sky Flakes,95,8,pcks
+"
+        );
+
+        $this->assertSame('rms', Product::where('name', 'Bond Paper A4')->first()->unit);
+        $this->assertSame('pcs', Product::where('name', 'Ballpen')->first()->unit);
+        $this->assertSame('pck', Product::where('name', 'Sky Flakes')->first()->unit);
+    }
+
+    /** @test */
+    public function unit_spellings_are_folded_to_one_abbreviation()
+    {
+        $this->import(
+            "name,price,quantity,unit
+"
+            . "Item A,1,1,Pieces
+"
+            . "Item B,1,1,PC
+"
+            . "Item C,1,1,ream
+"
+            . "Item D,1,1,Packs
+"
+            . "Item E,1,1,dozen
+"
+            . "Item F,1,1,Kilograms
+"
+        );
+
+        $units = Product::orderBy('name')->pluck('unit', 'name')->all();
+
+        $this->assertSame('pcs', $units['Item A']);
+        $this->assertSame('pcs', $units['Item B']);
+        $this->assertSame('rms', $units['Item C']);
+        $this->assertSame('pck', $units['Item D']);
+        $this->assertSame('doz', $units['Item E']);
+        $this->assertSame('kg', $units['Item F']);
+    }
+
+    /** @test */
+    public function an_unrecognised_unit_is_kept_as_typed()
+    {
+        $this->import("name,price,quantity,unit
+Custom Item,10,5,gallon
+");
+
+        $this->assertSame('gallon', Product::first()->unit);
+    }
+
+    /** @test */
+    public function a_blank_or_missing_unit_falls_back_to_pcs()
+    {
+        // Column present but empty on the row.
+        $this->import("name,price,quantity,unit
+No Unit Given,10,5,
+");
+        $this->assertSame('pcs', Product::where('name', 'No Unit Given')->first()->unit);
+
+        // Column absent altogether — the old three-column format still imports.
+        $this->import("name,price,quantity
+Legacy Row,10,5
+");
+        $this->assertSame('pcs', Product::where('name', 'Legacy Row')->first()->unit);
+    }
+
+    /** @test */
+    public function the_unit_column_may_be_named_uom_and_sit_anywhere()
+    {
+        $this->import("uom,quantity,name,price
+box,4,Chalk,55
+");
+
+        $product = Product::first();
+        $this->assertSame('Chalk', $product->name);
+        $this->assertSame('box', $product->unit);
+        $this->assertSame(4, $product->quantity);
+    }
+
+    /** @test */
+    public function unit_price_still_maps_to_price_not_to_unit()
+    {
+        // "unit price" and "unit" are distinct headers; the first must not be
+        // swallowed by the unit column.
+        $this->import("name,unit price,quantity,unit
+Marker,35.50,12,pcs
+");
+
+        $product = Product::first();
+        $this->assertEquals(35.50, (float) $product->price);
+        $this->assertSame('pcs', $product->unit);
+    }
+
+    /** @test */
+    public function re_importing_updates_the_unit_of_an_existing_product()
+    {
+        Product::create([
+            'sku' => 'KEEP-1',
+            'name' => 'Bond Paper A4',
+            'unit' => 'pcs',
+            'price' => 300,
+            'quantity' => 5,
+        ]);
+
+        $this->import("name,price,quantity,unit
+Bond Paper A4,320,10,reams
+");
+
+        $product = Product::first();
+        $this->assertSame(1, Product::count());
+        $this->assertSame('KEEP-1', $product->sku);
+        $this->assertSame('rms', $product->unit);
+    }
+
+    /** @test */
+    public function the_manual_form_saves_and_normalises_the_unit()
+    {
+        $this->actingAs($this->admin())->post(route('products.store'), [
+            'name' => 'Manual Item',
+            'price' => 20,
+            'quantity' => 3,
+            'unit' => 'Boxes',
+        ]);
+
+        $this->assertSame('box', Product::first()->unit);
+    }
+
+    /** @test */
+    public function the_inventory_list_shows_the_unit()
+    {
+        Product::create([
+            'sku' => 'U-1',
+            'name' => 'Bond Paper A4',
+            'unit' => 'rms',
+            'price' => 320,
+            'quantity' => 10,
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get(route('products.index'))
+            ->assertStatus(200)
+            ->assertSee('10 rms in stock');
+    }
+
+    /** @test */
     public function the_inventory_page_shows_the_import_button()
     {
         $this->actingAs($this->admin())
             ->get(route('products.index'))
             ->assertStatus(200)
             ->assertSee('Import CSV')
-            ->assertSee('name,price,quantity');
+            ->assertSee('name,price,quantity,unit');
     }
 }

@@ -268,6 +268,14 @@
         font-size: 0.78rem;
         letter-spacing: 0.3px;
     }
+    .csv-format-note code.csv-inline {
+        display: inline;
+        padding: 1px 5px;
+        margin: 0;
+        background: #e2e8f0;
+        color: #0f172a;
+        font-size: 0.74rem;
+    }
     .csv-format-note p {
         margin: 0;
         font-size: 0.76rem;
@@ -328,6 +336,14 @@
         box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
     }
     .inv-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .inv-form-row.is-triple { grid-template-columns: 1fr 1fr 0.8fr; }
+    .inv-unit-badge {
+        display: inline-block;
+        margin-left: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--color-text-muted);
+    }
     .inv-form-actions { display: flex; gap: 8px; margin-top: 4px; }
 
     /* Empty state */
@@ -427,16 +443,16 @@
                                     </span>
                                 @elseif($product->quantity <= 5)
                                     <span class="badge-stock badge-stock-low">
-                                        <span class="stock-dot stock-low"></span>{{ $product->quantity }} left
+                                        <span class="stock-dot stock-low"></span>{{ $product->quantity }} {{ $product->unit ?: 'pcs' }} left
                                     </span>
                                 @else
                                     <span class="badge-stock badge-stock-ok">
-                                        <span class="stock-dot stock-ok"></span>{{ $product->quantity }} in stock
+                                        <span class="stock-dot stock-ok"></span>{{ $product->quantity }} {{ $product->unit ?: 'pcs' }} in stock
                                     </span>
                                 @endif
                             </td>
                             <td style="text-align:right;font-weight:700;color:#059669;">
-                                &#8369;{{ number_format($product->price, 2) }}
+                                &#8369;{{ number_format($product->price, 2) }}<span class="inv-unit-badge">/ {{ $product->unit ?: 'pcs' }}</span>
                                 @if($product->hasBulkPricing())
                                     <div style="font-size:0.72rem;font-weight:600;color:var(--color-text-muted);margin-top:2px;">
                                         Bulk &#8369;{{ number_format($product->bulk_price, 2) }} at {{ $product->bulk_min_qty }}+
@@ -505,7 +521,7 @@
                         <input type="text" name="category" value="{{ old('category', $editProduct->category) }}" placeholder="e.g. Beverages">
                     </div>
                 </div>
-                <div class="inv-form-row">
+                <div class="inv-form-row is-triple">
                     <div class="inv-form-group">
                         <label>Price (PHP) <span style="color:var(--color-danger);">*</span></label>
                         <input type="number" step="0.01" min="0" name="price" value="{{ old('price', $editProduct->price) }}" required placeholder="0.00">
@@ -513,6 +529,10 @@
                     <div class="inv-form-group">
                         <label>Stock Qty <span style="color:var(--color-danger);">*</span></label>
                         <input type="number" min="0" name="quantity" value="{{ old('quantity', $editProduct->quantity) }}" required placeholder="0">
+                    </div>
+                    <div class="inv-form-group">
+                        <label>Unit</label>
+                        <input type="text" name="unit" list="unitOptions" value="{{ old('unit', $editProduct->unit) }}" placeholder="pcs">
                     </div>
                 </div>
                 <div class="inv-form-row">
@@ -557,7 +577,7 @@
                         <input type="text" name="category" value="{{ old('category') }}" placeholder="e.g. Beverages">
                     </div>
                 </div>
-                <div class="inv-form-row">
+                <div class="inv-form-row is-triple">
                     <div class="inv-form-group">
                         <label>Price (PHP) <span style="color:var(--color-danger);">*</span></label>
                         <input type="number" step="0.01" min="0" name="price" value="{{ old('price') }}" required placeholder="0.00">
@@ -565,6 +585,10 @@
                     <div class="inv-form-group">
                         <label>Stock Qty <span style="color:var(--color-danger);">*</span></label>
                         <input type="number" min="0" name="quantity" value="{{ old('quantity') }}" required placeholder="0">
+                    </div>
+                    <div class="inv-form-group">
+                        <label>Unit</label>
+                        <input type="text" name="unit" list="unitOptions" value="{{ old('unit') }}" placeholder="pcs">
                     </div>
                 </div>
                 <div class="inv-form-row">
@@ -591,6 +615,23 @@
     </div>
 </div>
 
+<datalist id="unitOptions">
+    <option value="pcs">Pieces</option>
+    <option value="rms">Reams</option>
+    <option value="pck">Packs</option>
+    <option value="box">Boxes</option>
+    <option value="set">Sets</option>
+    <option value="pair">Pairs</option>
+    <option value="doz">Dozens</option>
+    <option value="bdl">Bundles</option>
+    <option value="roll">Rolls</option>
+    <option value="btl">Bottles</option>
+    <option value="sack">Sacks</option>
+    <option value="kg">Kilograms</option>
+    <option value="m">Meters</option>
+    <option value="yd">Yards</option>
+</datalist>
+
 <!-- CSV Import Modal -->
 <div class="csv-modal-overlay" id="csvImportModal" aria-hidden="true">
     <div class="csv-modal" role="dialog" aria-modal="true" aria-labelledby="csvImportTitle">
@@ -614,13 +655,18 @@
             </label>
 
             <div class="csv-format-note">
-                <strong class="csv-format-title">Required columns</strong>
-                <code>name,price,quantity</code>
+                <strong class="csv-format-title">Columns</strong>
+                <code>name,price,quantity,unit</code>
                 <p>
-                    The first row must hold the column names. <strong>Do not include a SKU column</strong> &mdash;
-                    every new product is given one automatically from its name (for example
-                    <em>Coca-Cola 1.5L</em> becomes <em>COC-001</em>). A product whose name is already in
-                    the catalog has its price and stock updated, keeping the SKU it already has.
+                    The first row must hold the column names. <code class="csv-inline">unit</code> is optional
+                    &mdash; put <em>pcs</em>, <em>rms</em>, <em>pcks</em>, <em>box</em> and the like there, and
+                    leave it out to default to <em>pcs</em>.
+                </p>
+                <p style="margin-top:7px;">
+                    <strong>Do not include a SKU column</strong> &mdash; every new product is given one
+                    automatically from its name (for example <em>Coca-Cola 1.5L</em> becomes <em>COC-001</em>).
+                    A product whose name is already in the catalog has its price, stock and unit updated,
+                    keeping the SKU it already has.
                 </p>
             </div>
 
