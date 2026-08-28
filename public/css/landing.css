@@ -1341,6 +1341,14 @@ select.form-control-lp {
   background: #0f172a;
 }
 
+/* The `hidden` attribute only hides through the UA sheet's [hidden]{display:none},
+   which the display:block above outranks — so spell the hidden state out here.
+   Without this the photo and the reel both render and fight for the stage. */
+.gallery-main-img[hidden],
+.gallery-main-video[hidden] {
+  display: none;
+}
+
 .gallery-thumb-video {
   position: relative;
 }

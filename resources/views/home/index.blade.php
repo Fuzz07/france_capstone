@@ -431,7 +431,7 @@
 
             // ── Shop Gallery Lightbox ──────────────────────────
             const gallerySlides = [
-                { type: 'video', caption: 'Take a walk through Mera's — Stall No. 18, Bantayan Public Market' },
+                { type: 'video', caption: 'Step inside the store — Stall No. 18, Bantayan Public Market' },
                 { src: '/images/shop_gallery_1.jpg', caption: 'Store interior — fabrics, school supplies & general merchandise' },
                 { src: '/images/shop_gallery_2.jpg', caption: 'School supplies — notebooks, pens, folders & more' },
                 { src: '/images/shop_gallery_3.jpg', caption: 'Fabrics & textiles — a wide range of colors and patterns' },
@@ -481,8 +481,12 @@
                     mainVideo.hidden = false;
                     caption.textContent = slide.caption;
                     // Muted so the browser allows it to roll on its own; the controls
-                    // are there for anyone who wants the sound.
-                    mainVideo.currentTime = 0;
+                    // are there for anyone who wants the sound. Rewinding is only
+                    // legal once metadata exists, and preload="none" means it may
+                    // not yet — a throw here would abort the whole render.
+                    if (mainVideo.readyState > 0) {
+                        mainVideo.currentTime = 0;
+                    }
                     const started = mainVideo.play();
                     if (started) started.catch(() => {});
                 } else {

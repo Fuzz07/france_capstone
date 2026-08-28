@@ -38,6 +38,44 @@ class LandingGalleryTest extends TestCase
         );
     }
 
+    /**
+     * A stray apostrophe in a caption once ended a JS string early and threw a
+     * SyntaxError, which killed every function in that script block — the whole
+     * gallery, video and photos alike. Parsing the inline scripts catches that
+     * class of break, which no amount of HTML assertion would.
+     *
+     * @test
+     */
+    public function the_inline_scripts_on_the_landing_page_parse()
+    {
+        exec('node --version 2>&1', $probe, $probeCode);
+        if ($probeCode !== 0) {
+            $this->markTestSkipped('node is not available to parse-check the scripts.');
+        }
+
+        $html = $this->get('/')->assertStatus(200)->getContent();
+
+        preg_match_all('#<script(?![^>]*src=)[^>]*>(.*?)</script>#si', $html, $matches);
+        $scripts = array_filter($matches[1], fn ($js) => trim($js) !== '');
+
+        $this->assertNotEmpty($scripts, 'No inline scripts were found to check.');
+
+        foreach ($scripts as $index => $js) {
+            $file = tempnam(sys_get_temp_dir(), 'jscheck') . '.js';
+            file_put_contents($file, $js);
+
+            $output = [];
+            exec('node --check ' . escapeshellarg($file) . ' 2>&1', $output, $exitCode);
+            @unlink($file);
+
+            $this->assertSame(
+                0,
+                $exitCode,
+                'Inline script #' . $index . ' does not parse:' . PHP_EOL . implode(PHP_EOL, $output)
+            );
+        }
+    }
+
     /** @test */
     public function every_asset_the_landing_page_references_exists_on_disk()
     {
