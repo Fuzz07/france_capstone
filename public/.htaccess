@@ -18,3 +18,14 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# ── Video streaming support ────────────────────────────────────────────────────
+# Serve MP4 with the correct MIME type so browsers recognise it as video.
+AddType video/mp4 .mp4
+
+# Allow byte-range requests so browsers can seek without re-downloading the file.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(mp4)$">
+        Header set Accept-Ranges bytes
+    </FilesMatch>
+</IfModule>

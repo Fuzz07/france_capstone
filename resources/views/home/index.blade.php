@@ -288,11 +288,12 @@
                     </svg>
                 </button>
                 <div class="gallery-main-img-wrapper">
-                    <img id="galleryMainImg" src="" alt="Shop photo" class="gallery-main-img">
+                    <img id="galleryMainImg" src="" alt="Shop photo" class="gallery-main-img" hidden>
                     <video id="galleryMainVideo" class="gallery-main-video"
-                        src="{{ asset('images/shop_video.mp4') }}"
                         poster="{{ asset('images/shop_video_poster.jpg') }}"
-                        controls playsinline muted preload="metadata" hidden></video>
+                        controls playsinline muted preload="metadata" hidden>
+                        <source src="{{ asset('images/shop_video.mp4') }}" type="video/mp4">
+                    </video>
                     <div class="gallery-video-status" id="galleryVideoStatus" hidden></div>
                     <div class="gallery-img-caption" id="galleryCaption"></div>
                 </div>
