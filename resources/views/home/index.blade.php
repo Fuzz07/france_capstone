@@ -290,8 +290,8 @@
                 <div class="gallery-main-img-wrapper">
                     <img id="galleryMainImg" src="" alt="Shop photo" class="gallery-main-img">
                     <video id="galleryMainVideo" class="gallery-main-video"
-                        src="{{ request()->getBaseUrl() }}/images/shop_video.mp4"
-                        poster="{{ request()->getBaseUrl() }}/images/shop_video_poster.jpg"
+                        src="{{ asset('images/shop_video.mp4') }}"
+                        poster="{{ asset('images/shop_video_poster.jpg') }}"
                         controls playsinline muted preload="metadata" hidden></video>
                     <div class="gallery-video-status" id="galleryVideoStatus" hidden></div>
                     <div class="gallery-img-caption" id="galleryCaption"></div>
@@ -305,7 +305,7 @@
             </div>
             <div class="gallery-thumbs">
                 <div class="gallery-thumb gallery-thumb-video active" onclick="setGallerySlide(0)">
-                    <img src="{{ request()->getBaseUrl() }}/images/shop_video_poster.jpg" alt="Shop video tour">
+                    <img src="{{ asset('images/shop_video_poster.jpg') }}" alt="Shop video tour">
                     <span class="gallery-thumb-badge">Video</span>
                 </div>
                 <div class="gallery-thumb" onclick="setGallerySlide(1)">
