@@ -45,7 +45,7 @@
                 <div class="hero-image-wrapper hero-image-clickable" id="heroImageBtn" onclick="openGallery(0)"
                     title="Click to watch the shop video and view photos" role="button" tabindex="0"
                     aria-label="Watch the shop video and view the photo gallery">
-                    <img src="{{ request()->getBaseUrl() }}/images/hero_merchandise.jpg"
+                    <img src="{{ asset('images/hero_merchandise.jpg') }}"
                         alt="Mera's Merchandise Storefront Showcase">
                     <div class="gallery-hint-badge">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
