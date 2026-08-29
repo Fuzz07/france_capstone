@@ -290,8 +290,9 @@
                 <div class="gallery-main-img-wrapper">
                     <img id="galleryMainImg" src="" alt="Shop photo" class="gallery-main-img" hidden>
                     <video id="galleryMainVideo" class="gallery-main-video"
+                        src="{{ asset('images/shop_video.mp4') }}"
                         poster="{{ asset('images/shop_video_poster.jpg') }}"
-                        controls playsinline muted preload="metadata" hidden>
+                        controls playsinline muted preload="auto" hidden>
                         <source src="{{ asset('images/shop_video.mp4') }}" type="video/mp4">
                     </video>
                     <div class="gallery-video-status" id="galleryVideoStatus" hidden></div>
@@ -434,20 +435,18 @@
             // ── Shop Gallery Lightbox ──────────────────────────
             const gallerySlides = [
                 { type: 'video', caption: 'Step inside the store — Stall No. 18, Bantayan Public Market' },
-                { src: '/images/shop_gallery_1.jpg', caption: 'Store interior — fabrics, school supplies & general merchandise' },
-                { src: '/images/shop_gallery_2.jpg', caption: 'School supplies — notebooks, pens, folders & more' },
-                { src: '/images/shop_gallery_3.jpg', caption: 'Fabrics & textiles — a wide range of colors and patterns' },
-                { src: '/images/shop_gallery_4.jpg', caption: 'Stall No. 18, Bantayan Public Market — visit us anytime!' },
+                { src: '{{ asset('images/shop_gallery_1.jpg') }}', caption: 'Store interior — fabrics, school supplies & general merchandise' },
+                { src: '{{ asset('images/shop_gallery_2.jpg') }}', caption: 'School supplies — notebooks, pens, folders & more' },
+                { src: '{{ asset('images/shop_gallery_3.jpg') }}', caption: 'Fabrics & textiles — a wide range of colors and patterns' },
+                { src: '{{ asset('images/shop_gallery_4.jpg') }}', caption: 'Stall No. 18, Bantayan Public Market — visit us anytime!' },
             ];
             let galleryCurrent = 0;
 
             // ── Reel loading / failure feedback ────────────────
-            // The file is a couple of megabytes, so on a slow link there is a real
-            // wait before the first frame. Say so, and say it plainly when it fails
-            // outright, rather than leaving a poster that looks broken.
             const galleryVideoStatus = document.getElementById('galleryVideoStatus');
 
             function showVideoStatus(message, isError) {
+                if (!galleryVideoStatus) return;
                 galleryVideoStatus.textContent = '';
 
                 if (!isError) {
@@ -465,11 +464,13 @@
             }
 
             function hideVideoStatus() {
+                if (!galleryVideoStatus) return;
                 galleryVideoStatus.hidden = true;
             }
 
             (function wireVideoStatus() {
                 const video = document.getElementById('galleryMainVideo');
+                if (!video) return;
 
                 function reportVideoError() {
                     const reasons = {
@@ -479,28 +480,26 @@
                         4: 'the video is missing or in an unsupported format',
                     };
                     const code = video.error ? video.error.code : 0;
-
                     showVideoStatus('Sorry, the shop video could not load - ' + (reasons[code] || 'unknown error') + '.', true);
                 }
 
-                video.addEventListener('loadstart', function () {
-                    showVideoStatus('Loading video...', false);
-                });
                 video.addEventListener('waiting', function () {
-                    showVideoStatus('Buffering...', false);
+                    if (gallerySlides[galleryCurrent]?.type === 'video' && !video.paused) {
+                        showVideoStatus('Buffering...', false);
+                    }
                 });
                 video.addEventListener('canplay', hideVideoStatus);
+                video.addEventListener('canplaythrough', hideVideoStatus);
+                video.addEventListener('loadeddata', hideVideoStatus);
                 video.addEventListener('playing', hideVideoStatus);
+                video.addEventListener('play', hideVideoStatus);
+                video.addEventListener('pause', hideVideoStatus);
+                video.addEventListener('timeupdate', hideVideoStatus);
                 video.addEventListener('error', reportVideoError);
 
-                // preload starts the fetch while the document is still parsing, so
-                // it can succeed or fail before this script ever runs. Catch up on
-                // whatever already happened instead of waiting for an event that
-                // has been and gone.
-                if (video.error) {
-                    reportVideoError();
-                } else if (video.networkState === HTMLMediaElement.NETWORK_LOADING && video.readyState < 3) {
-                    showVideoStatus('Loading video...', false);
+                const source = video.querySelector('source');
+                if (source) {
+                    source.addEventListener('error', reportVideoError);
                 }
             })();
 
@@ -518,7 +517,11 @@
                 modal.classList.remove('open');
                 modal.setAttribute('aria-hidden', 'true');
                 document.body.style.overflow = '';
-                document.getElementById('galleryMainVideo').pause();
+                const video = document.getElementById('galleryMainVideo');
+                if (video) {
+                    video.pause();
+                }
+                hideVideoStatus();
             }
 
             function handleGalleryOverlayClick(e) {
@@ -548,15 +551,30 @@
                     mainImg.hidden = true;
                     mainVideo.hidden = false;
                     caption.textContent = slide.caption;
-                    // Muted so the browser allows it to roll on its own; the controls
-                    // are there for anyone who wants the sound. Rewinding is only
-                    // legal once metadata exists, and preload="none" means it may
-                    // not yet — a throw here would abort the whole render.
+                    mainVideo.muted = true; // Ensure programmatic autoplay is permitted
+
+                    if (mainVideo.readyState >= 2) {
+                        hideVideoStatus();
+                    } else if (mainVideo.error) {
+                        // Error is handled by wireVideoStatus
+                    } else {
+                        showVideoStatus('Loading video...', false);
+                    }
+
                     if (mainVideo.readyState > 0) {
                         mainVideo.currentTime = 0;
                     }
-                    const started = mainVideo.play();
-                    if (started) started.catch(() => {});
+                    const playPromise = mainVideo.play();
+                    if (playPromise !== undefined) {
+                        playPromise
+                            .then(() => {
+                                hideVideoStatus();
+                            })
+                            .catch(() => {
+                                // If autoplay policy blocks silent start, hide spinner so user can use controls
+                                hideVideoStatus();
+                            });
+                    }
                 } else {
                     mainVideo.pause();
                     mainVideo.hidden = true;
