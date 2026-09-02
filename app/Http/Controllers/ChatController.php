@@ -12,7 +12,7 @@ class ChatController extends Controller
 {
     /** Live Messenger account customers are handed off to when the bot is not enough. */
     private const MESSENGER_URL = 'https://m.me/JohhFranceDescartinQuijano';
-    private const MESSENGER_NAME = 'Johh France Descartin Quijano';
+    private const MESSENGER_NAME = "Mera's Merchandise";
 
     /** Number of customer messages after which the Messenger handoff is offered. */
     private const HANDOFF_AFTER_MESSAGES = 3;

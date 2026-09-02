@@ -45,8 +45,8 @@ class PosController extends Controller
                       ->orWhere('category', 'like', "%{$search}%");
                 });
             })
-            ->limit(500)
-            ->get();
+            ->paginate(8)
+            ->withQueryString();
         $cart = $this->cart($request);
         $grandTotal = collect($cart)->sum(function ($item) {
             return $item['price'] * $item['qty'];
@@ -63,14 +63,19 @@ class PosController extends Controller
         $request->validate([
             'product_id' => 'required|integer|exists:products,id',
             'qty' => 'nullable|integer|min:1',
+            'purchase_all' => 'nullable|boolean',
         ]);
 
-        $qty = max(1, $request->input('qty', 1));
         $product = Product::findOrFail($request->product_id);
         $cart = $request->session()->get('cart', []);
-
         $existingQty = $cart[$product->id]['qty'] ?? 0;
-        $newQty = min($existingQty + $qty, $product->quantity);
+
+        if ($request->boolean('purchase_all')) {
+            $newQty = $product->quantity;
+        } else {
+            $qty = max(1, (int) $request->input('qty', 1));
+            $newQty = min($existingQty + $qty, $product->quantity);
+        }
 
         if ($newQty <= 0) {
             return back()->with('notice', 'Product is out of stock!')->with('noticeType', 'danger');
@@ -80,7 +85,7 @@ class PosController extends Controller
 
         $request->session()->put('cart', $cart);
 
-        return redirect()->route('pos.index');
+        return redirect()->back(fallback: route('pos.index'));
     }
 
     public function updateCart(Request $request)

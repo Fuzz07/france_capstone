@@ -212,6 +212,136 @@
             text-align: center;
             line-height: 1.4;
         }
+
+        /* POS Data Table Styles */
+        .pos-table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+        }
+        .pos-sku-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .pos-stock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .pos-stock-ok { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .pos-stock-low { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .pos-stock-zero { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .pos-stock-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .pos-stock-ok .pos-stock-dot { background: #10b981; }
+        .pos-stock-low .pos-stock-dot { background: #f59e0b; }
+        .pos-stock-zero .pos-stock-dot { background: #ef4444; }
+
+        .btn-pos-add {
+            background: #4f46e5;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s, transform 0.15s;
+            text-decoration: none;
+        }
+        .btn-pos-add:hover:not(:disabled) {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+        .btn-pos-add:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-pos-all {
+            background: #0284c7;
+            color: #fff;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s, transform 0.15s;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        .btn-pos-all:hover:not(:disabled) {
+            background: #0369a1;
+            transform: translateY(-1px);
+        }
+        .btn-pos-all:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .pos-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 14px 18px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 8px;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+        }
+        .pos-pagination .pagination-btn {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pos-pagination .pagination-btn:hover:not(.disabled) {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            background: #f5f3ff;
+        }
+        .pos-pagination .pagination-btn.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .pos-pagination .pagination-info {
+            font-size: 0.82rem;
+            color: #64748b;
+            font-weight: 500;
+        }
     </style>
 
 
@@ -222,7 +352,12 @@
     <div class="pos-container">
         <div class="panel-card">
             <div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-                <h3 style="margin:0;">Product Catalog</h3>
+                <div>
+                    <h3 style="margin:0;">Product Catalog</h3>
+                    <p style="margin:2px 0 0 0;font-size:0.8rem;color:var(--color-text-muted);">
+                        Showing {{ $products->firstItem() ?? 0 }} - {{ $products->lastItem() ?? 0 }} of {{ $products->total() }} items
+                    </p>
+                </div>
                 <form class="pos-search-form" method="GET" action="{{ route('pos.index') }}">
                     <div class="pos-search-input-wrapper">
                         <svg xmlns="http://www.w3.org/2000/svg" class="pos-search-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -237,48 +372,126 @@
                     <button type="submit" class="btn btn-primary pos-search-btn btn-sm">Search</button>
                 </form>
             </div>
-            <div class="pos-product-grid">
-                @forelse($products as $product)
-                    <div class="pos-product-card {{ $product->quantity <= 0 ? 'pos-card-oos' : '' }}">
-                        <div>
-                            <h4 class="pos-prod-name">{{ $product->name }}</h4>
-                            <div class="pos-prod-stock">{{ $product->category ?: 'General' }}</div>
-                            @if($product->quantity <= 0)
-                                <span class="pos-oos-badge">Out of Stock</span>
-                            @elseif($product->quantity <= 5)
-                                <span class="pos-low-badge">Low: {{ $product->quantity }} left</span>
-                            @endif
-                        </div>
-                        <div class="pos-prod-footer">
-                            <div class="pos-prod-pricing">
-                                <div class="pos-prod-price">&#8369;{{ number_format($product->price, 2) }}</div>
-                                @if($product->hasBulkPricing())
-                                    <div class="pos-prod-bulk">
-                                        <span class="pos-bulk-tag">Bulk</span>
-                                        &#8369;{{ number_format($product->bulk_price, 2) }}
-                                        <span class="pos-bulk-min">at {{ $product->bulk_min_qty }}+</span>
+
+            <div class="pos-table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th style="text-align:center;">Stock</th>
+                            <th style="text-align:right;">Price</th>
+                            <th style="text-align:center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($products as $product)
+                            @php
+                                $inCartQty = $cart[$product->id]['qty'] ?? 0;
+                                $canAddMore = ($product->quantity > 0) && ($inCartQty < $product->quantity);
+                                $isAllInCart = ($product->quantity > 0) && ($inCartQty >= $product->quantity);
+                            @endphp
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;color:var(--color-secondary);margin-bottom:2px;">{{ $product->name }}</div>
+                                    @if($product->sku)
+                                        <span class="pos-sku-badge">{{ $product->sku }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="category-pill">{{ $product->category ?: 'General' }}</span>
+                                </td>
+                                <td style="text-align:center;">
+                                    @if($product->quantity <= 0)
+                                        <span class="pos-stock-badge pos-stock-zero">
+                                            <span class="pos-stock-dot"></span>Out of Stock
+                                        </span>
+                                    @elseif($product->quantity <= 5)
+                                        <span class="pos-stock-badge pos-stock-low">
+                                            <span class="pos-stock-dot"></span>Low: {{ $product->quantity }} left
+                                        </span>
+                                    @else
+                                        <span class="pos-stock-badge pos-stock-ok">
+                                            <span class="pos-stock-dot"></span>{{ $product->quantity }} {{ $product->unit ?: 'pcs' }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td style="text-align:right;">
+                                    <div style="font-weight:700;color:#059669;">
+                                        &#8369;{{ number_format($product->price, 2) }}
                                     </div>
-                                @endif
-                            </div>
-                            @if($product->quantity > 0)
-                                <form method="POST" action="{{ route('pos.add') }}">
-                                    @csrf
-                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                    <button type="submit" class="btn-icon-add" title="Add to cart">+</button>
-                                </form>
-                            @else
-                                <button class="btn-icon-add" disabled style="opacity:0.4;cursor:not-allowed;">+</button>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;color:var(--color-text-muted);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.5;"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                        <p style="font-weight:600;margin-bottom:4px;">No products match your search</p>
-                        <p style="font-size:0.8rem;">Try clearing the search query to see all products.</p>
-                    </div>
-                @endforelse
+                                    @if($product->hasBulkPricing())
+                                        <div style="font-size:0.72rem;font-weight:600;color:#4f46e5;margin-top:2px;">
+                                            <span class="pos-bulk-tag" style="margin-right:2px;">Bulk</span>
+                                            &#8369;{{ number_format($product->bulk_price, 2) }} <span style="color:var(--color-text-muted);font-weight:normal;">({{ $product->bulk_min_qty }}+)</span>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td style="text-align:center;">
+                                    @if($product->quantity > 0)
+                                        <div style="display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
+                                            {{-- Add 1 unit --}}
+                                            <form method="POST" action="{{ route('pos.add') }}" style="margin:0;">
+                                                @csrf
+                                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                                <input type="hidden" name="qty" value="1">
+                                                <button type="submit" class="btn-pos-add" {{ !$canAddMore ? 'disabled' : '' }} title="{{ $canAddMore ? 'Add 1 unit to cart' : 'Max available stock already in cart' }}">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                                    Add
+                                                </button>
+                                            </form>
+
+                                            {{-- Purchase All / Buy All Stock --}}
+                                            <form method="POST" action="{{ route('pos.add') }}" style="margin:0;">
+                                                @csrf
+                                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                                <input type="hidden" name="purchase_all" value="1">
+                                                <button type="submit" class="btn-pos-all" {{ $isAllInCart ? 'disabled' : '' }} title="{{ $isAllInCart ? 'All available stock already in cart' : 'Purchase all ' . $product->quantity . ' available units' }}">
+                                                    @if($isAllInCart)
+                                                        All in Cart ({{ $inCartQty }})
+                                                    @else
+                                                        Purchase All ({{ $product->quantity }})
+                                                    @endif
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @else
+                                        <button class="btn-pos-add" disabled style="opacity:0.4;cursor:not-allowed;">Unavailable</button>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" style="text-align:center;padding:48px 24px;color:var(--color-text-muted);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.5;"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                    <p style="font-weight:600;margin-bottom:4px;">No products match your search</p>
+                                    <p style="font-size:0.8rem;">Try clearing the search query to see all products.</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
+
+            @if($products->hasPages())
+                <div class="pos-pagination">
+                    @if($products->onFirstPage())
+                        <span class="pagination-btn disabled">&laquo; Previous</span>
+                    @else
+                        <a href="{{ $products->previousPageUrl() }}" class="pagination-btn">&laquo; Previous</a>
+                    @endif
+
+                    <span class="pagination-info">
+                        Page {{ $products->currentPage() }} of {{ $products->lastPage() }}
+                    </span>
+
+                    @if($products->hasMorePages())
+                        <a href="{{ $products->nextPageUrl() }}" class="pagination-btn">Next &raquo;</a>
+                    @else
+                        <span class="pagination-btn disabled">Next &raquo;</span>
+                    @endif
+                </div>
+            @endif
         </div>
 
         <div class="panel-card">

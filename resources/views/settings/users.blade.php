@@ -339,6 +339,50 @@
         transform: translateY(-1px);
     }
 
+    /* Custom Pagination Styling */
+    .users-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 18px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .users-pagination .pagination-btn {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #1e293b;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .users-pagination .pagination-btn:hover:not(.disabled) {
+        border-color: #4f46e5;
+        color: #4f46e5;
+        background: #f5f3ff;
+    }
+
+    .users-pagination .pagination-btn.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .users-pagination .pagination-info {
+        font-size: 0.85rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
     /* Modal premium styles */
     .user-modal-overlay {
         position: fixed;
@@ -592,6 +636,25 @@
             @endif
         </tbody>
     </table>
+    @if($users->hasPages())
+        <div class="users-pagination">
+            @if($users->onFirstPage())
+                <span class="pagination-btn disabled">&laquo; Previous</span>
+            @else
+                <a href="{{ $users->previousPageUrl() }}" class="pagination-btn">&laquo; Previous</a>
+            @endif
+
+            <span class="pagination-info">
+                Showing {{ $users->firstItem() ?? 0 }} - {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} accounts (Page {{ $users->currentPage() }} of {{ $users->lastPage() }})
+            </span>
+
+            @if($users->hasMorePages())
+                <a href="{{ $users->nextPageUrl() }}" class="pagination-btn">Next &raquo;</a>
+            @else
+                <span class="pagination-btn disabled">Next &raquo;</span>
+            @endif
+        </div>
+    @endif
 </div>
 
 <!-- Premium Create User Modal -->

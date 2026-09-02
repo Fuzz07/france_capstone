@@ -60,6 +60,7 @@ class BulkPricingAndHandoffTest extends TestCase
         $third = $this->postJson(route('chat.bot-response'), ['message' => 'where are you located?']);
         $this->assertNotNull($third->json('handoff'), 'Handoff must be offered on the third message.');
         $this->assertSame('https://m.me/JohhFranceDescartinQuijano', $third->json('handoff.url'));
+        $this->assertSame("Mera's Merchandise", $third->json('handoff.name'));
 
         // Offered once; the bot keeps answering normally afterwards.
         $fourth = $this->postJson(route('chat.bot-response'), ['message' => 'do you accept gcash?']);
@@ -145,5 +146,94 @@ class BulkPricingAndHandoffTest extends TestCase
 
         $response->assertSessionHasErrors('bulk_min_qty');
         $this->assertDatabaseMissing('products', ['name' => 'Half Configured']);
+    }
+
+    /** @test */
+    public function pos_purchase_all_adds_entire_remaining_stock_and_applies_bulk_pricing()
+    {
+        $this->actingAs($this->admin());
+        $product = $this->bulkProduct(); // 100 in stock, bulk_min_qty = 12, retail 25, bulk 20
+
+        $response = $this->post(route('pos.add'), [
+            'product_id' => $product->id,
+            'purchase_all' => 1,
+        ]);
+
+        $response->assertStatus(302);
+        $cart = session('cart');
+        $this->assertArrayHasKey($product->id, $cart);
+        $this->assertSame(100, $cart[$product->id]['qty']);
+        $this->assertSame(20.0, $cart[$product->id]['price']);
+        $this->assertTrue($cart[$product->id]['is_bulk']);
+    }
+
+    /** @test */
+    public function pos_admin_catalog_is_paginated_by_eight()
+    {
+        $this->actingAs($this->admin());
+
+        // Create 10 products
+        for ($i = 1; $i <= 10; $i++) {
+            Product::create([
+                'sku' => "SKU-TEST-{$i}",
+                'name' => "Test Product {$i}",
+                'price' => 10.00,
+                'quantity' => 20,
+            ]);
+        }
+
+        $response = $this->get(route('pos.index'));
+        $response->assertStatus(200);
+
+        $paginator = $response->viewData('products');
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $paginator);
+        $this->assertSame(8, $paginator->perPage());
+        $this->assertCount(8, $paginator->items());
+    }
+
+    /** @test */
+    public function inventory_is_paginated_by_eight()
+    {
+        $this->actingAs($this->admin());
+
+        for ($i = 1; $i <= 10; $i++) {
+            Product::create([
+                'sku' => "SKU-INV-{$i}",
+                'name' => "Inv Product {$i}",
+                'price' => 15.00,
+                'quantity' => 10,
+            ]);
+        }
+
+        $response = $this->get(route('products.index'));
+        $response->assertStatus(200);
+
+        $paginator = $response->viewData('products');
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $paginator);
+        $this->assertSame(8, $paginator->perPage());
+        $this->assertCount(8, $paginator->items());
+    }
+
+    /** @test */
+    public function user_management_is_paginated_by_eight()
+    {
+        $this->actingAs($this->admin());
+
+        for ($i = 1; $i <= 10; $i++) {
+            User::create([
+                'name' => "Customer {$i}",
+                'email' => "customer{$i}@test.com",
+                'password' => Hash::make('password123'),
+                'role' => 'user',
+            ]);
+        }
+
+        $response = $this->get(route('users.index'));
+        $response->assertStatus(200);
+
+        $paginator = $response->viewData('users');
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $paginator);
+        $this->assertSame(8, $paginator->perPage());
+        $this->assertCount(8, $paginator->items());
     }
 }

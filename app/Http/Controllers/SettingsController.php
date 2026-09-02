@@ -263,7 +263,7 @@ class SettingsController extends Controller
             });
         }
 
-        $users = $query->orderBy('name')->limit(500)->get();
+        $users = $query->orderBy('name')->paginate(8)->withQueryString();
 
         return view('settings.users', [
             'users' => $users,

@@ -92,8 +92,24 @@
                     @endif
                 </div>
                 <div class="prod-footer">
-                    <div class="prod-price">₱{{ number_format($product->price, 2) }}</div>
-                    <button type="button" class="btn-inquire" onclick="inquireProduct({{ $product->id }}, '{{ addslashes($product->name) }}')">Inquire</button>
+                    <div>
+                        <div class="prod-price">₱{{ number_format($product->price, 2) }}</div>
+                        @if($product->hasBulkPricing())
+                            <div class="landing-bulk-tag">
+                                Bulk: ₱{{ number_format($product->bulk_price, 2) }} ({{ $product->bulk_min_qty }}+ pcs)
+                            </div>
+                        @endif
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                        <button type="button" class="btn-inquire" onclick="inquireProduct({{ $product->id }}, '{{ addslashes($product->name) }}', 'general')">Inquire</button>
+                        @if($product->quantity > 0)
+                            <button type="button" class="btn-inquire-all"
+                                onclick="inquireProduct({{ $product->id }}, '{{ addslashes($product->name) }}', 'purchase_all', {{ $product->quantity }}, {{ (float) $product->price }}, {{ $product->hasBulkPricing() ? (float) $product->bulk_price : 'null' }}, {{ $product->bulk_min_qty ?? 'null' }}, '{{ addslashes($product->unit ?: 'pcs') }}')"
+                                title="Inquire to purchase all available stock ({{ $product->quantity }} {{ $product->unit ?: 'pcs' }})">
+                                Purchase All ({{ $product->quantity }})
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </div>
         @empty
@@ -268,15 +284,55 @@
     }
 
     // Pre-select product and scroll to form
-    function inquireProduct(id, name) {
+    function inquireProduct(id, name, mode, quantity, price, bulkPrice, bulkMin, unit) {
         const subject = document.getElementById('subject');
-        subject.value = 'Inquiry about ' + name;
+        const message = document.getElementById('message');
+
+        unit = unit || 'pcs';
+
+        if (mode === 'purchase_all' && quantity > 0) {
+            let effectivePrice = price;
+            let rateNote = "Regular price ₱" + price.toFixed(2) + " / " + unit;
+            if (bulkPrice && bulkMin && quantity >= bulkMin) {
+                effectivePrice = bulkPrice;
+                rateNote = "Bulk discount price ₱" + bulkPrice.toFixed(2) + " / " + unit + " (applied for " + bulkMin + "+ " + unit + ")";
+            }
+            const totalVal = (quantity * effectivePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            if (subject) {
+                subject.value = 'Bulk Purchase All: ' + name + ' (' + quantity + ' ' + unit + ')';
+            }
+            if (message) {
+                message.value = 'Hello Mera\'s Store Team,\n\n' +
+                    'I am inquiring to PURCHASE ALL available stock of this specific item:\n' +
+                    '• Product: ' + name + '\n' +
+                    '• Quantity to Purchase: ' + quantity + ' ' + unit + ' (Entire Remaining Stock)\n' +
+                    '• Unit Pricing: ' + rateNote + '\n' +
+                    '• Total Estimated Amount: ₱' + totalVal + '\n\n' +
+                    'Please confirm stock reservation, payment methods, and pickup or delivery details.';
+            }
+        } else {
+            if (subject) {
+                subject.value = 'Inquiry about ' + name;
+            }
+            if (message) {
+                message.value = 'Hello Mera\'s Store Team,\n\n' +
+                    'I would like to inquire about ' + name + ' (current availability, bulk buying quotes, and details).';
+            }
+        }
         
         const element = document.getElementById('inquire');
-        element.scrollIntoView({ behavior: 'smooth' });
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
         
         setTimeout(() => {
-            document.getElementById('customerName').focus();
+            const nameField = document.getElementById('customerName');
+            if (nameField && !nameField.value) {
+                nameField.focus();
+            } else if (message) {
+                message.focus();
+            }
         }, 800);
     }
 

@@ -653,6 +653,37 @@ select.form-control-lp {
   color: #ffffff;
 }
 
+.landing-bulk-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4f46e5;
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.btn-inquire-all {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 1px solid transparent;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--lp-transition-fast);
+  white-space: nowrap;
+}
+
+.btn-inquire-all:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
 /* ── Inquiry Section ──────────────────────────────── */
 .inquiry-split {
   display: grid;

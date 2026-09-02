@@ -68,7 +68,7 @@
                 <div class="hero-image-wrapper hero-image-clickable" id="heroImageBtn" onclick="openGallery(0)"
                     title="Click to watch the shop video and view photos" role="button" tabindex="0"
                     aria-label="Watch the shop video and view the photo gallery">
-                    <img src="/images/hero_merchandise.jpg"
+                    <img src="http://localhost/images/hero_merchandise.jpg"
                         alt="Mera's Merchandise Storefront Showcase">
                     <div class="gallery-hint-badge">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -188,7 +188,7 @@
 
             <div class="inquiry-form-card">
                 <form method="POST" action="http://localhost/inquiries">
-                    <input type="hidden" name="_token" value="7qlv49pyatoRp8Xow029Na7SFnU0uKKb27dhPkMr" autocomplete="off">                    
+                    <input type="hidden" name="_token" value="BA0C8KccMqqhdwNFwiRQ6yP32w9qQ58t3yMlPwQm" autocomplete="off">                    
                     <div class="form-group" style="margin-bottom: 24px;">
                         <label for="customerName">Your Full Name</label>
                         <input type="text" name="customer_name" id="customerName" class="form-control-lp" required
@@ -254,11 +254,13 @@
                     </svg>
                 </button>
                 <div class="gallery-main-img-wrapper">
-                    <img id="galleryMainImg" src="" alt="Shop photo" class="gallery-main-img">
+                    <img id="galleryMainImg" src="" alt="Shop photo" class="gallery-main-img" hidden>
                     <video id="galleryMainVideo" class="gallery-main-video"
-                        src="/images/shop_video.mp4"
-                        poster="/images/shop_video_poster.jpg"
-                        controls playsinline muted preload="metadata" hidden></video>
+                        src="http://localhost/images/shop_video.mp4"
+                        poster="http://localhost/images/shop_video_poster.jpg"
+                        controls playsinline muted preload="auto" hidden>
+                        <source src="http://localhost/images/shop_video.mp4" type="video/mp4">
+                    </video>
                     <div class="gallery-video-status" id="galleryVideoStatus" hidden></div>
                     <div class="gallery-img-caption" id="galleryCaption"></div>
                 </div>
@@ -271,7 +273,7 @@
             </div>
             <div class="gallery-thumbs">
                 <div class="gallery-thumb gallery-thumb-video active" onclick="setGallerySlide(0)">
-                    <img src="/images/shop_video_poster.jpg" alt="Shop video tour">
+                    <img src="http://localhost/images/shop_video_poster.jpg" alt="Shop video tour">
                     <span class="gallery-thumb-badge">Video</span>
                 </div>
                 <div class="gallery-thumb" onclick="setGallerySlide(1)">
@@ -1036,7 +1038,7 @@ function merasSubmit(e) {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': '7qlv49pyatoRp8Xow029Na7SFnU0uKKb27dhPkMr'
+            'X-CSRF-TOKEN': 'BA0C8KccMqqhdwNFwiRQ6yP32w9qQ58t3yMlPwQm'
         },
         body: JSON.stringify({ message: txt })
     })
@@ -1418,10 +1420,41 @@ function merasSubmit(e) {
             }
 
             // Pre-select product and scroll to form
-            function inquireProduct(id, name) {
+            function inquireProduct(id, name, mode, quantity, price, bulkPrice, bulkMin, unit) {
                 const subject = document.getElementById('subject');
-                if (subject) {
-                    subject.value = 'Inquiry about ' + name;
+                const message = document.getElementById('message');
+
+                unit = unit || 'pcs';
+
+                if (mode === 'purchase_all' && quantity > 0) {
+                    let effectivePrice = price;
+                    let rateNote = "Regular price ₱" + price.toFixed(2) + " / " + unit;
+                    if (bulkPrice && bulkMin && quantity >= bulkMin) {
+                        effectivePrice = bulkPrice;
+                        rateNote = "Bulk discount price ₱" + bulkPrice.toFixed(2) + " / " + unit + " (applied for " + bulkMin + "+ " + unit + ")";
+                    }
+                    const totalVal = (quantity * effectivePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    if (subject) {
+                        subject.value = 'Bulk Purchase All: ' + name + ' (' + quantity + ' ' + unit + ')';
+                    }
+                    if (message) {
+                        message.value = 'Hello Mera\'s Store Team,\n\n' +
+                            'I am inquiring to PURCHASE ALL available stock of this specific item:\n' +
+                            '• Product: ' + name + '\n' +
+                            '• Quantity to Purchase: ' + quantity + ' ' + unit + ' (Entire Remaining Stock)\n' +
+                            '• Unit Pricing: ' + rateNote + '\n' +
+                            '• Total Estimated Amount: ₱' + totalVal + '\n\n' +
+                            'Please confirm stock reservation, payment methods, and pickup or delivery details.';
+                    }
+                } else {
+                    if (subject) {
+                        subject.value = 'Inquiry about ' + name;
+                    }
+                    if (message) {
+                        message.value = 'Hello Mera\'s Store Team,\n\n' +
+                            'I would like to inquire about ' + name + ' (current availability, bulk buying quotes, and details).';
+                    }
                 }
 
                 const element = document.getElementById('inquire');
@@ -1435,7 +1468,11 @@ function merasSubmit(e) {
 
                 setTimeout(() => {
                     const nameField = document.getElementById('customerName');
-                    if (nameField) nameField.focus();
+                    if (nameField && !nameField.value) {
+                        nameField.focus();
+                    } else if (message) {
+                        message.focus();
+                    }
                 }, 800);
             }
 
@@ -1505,20 +1542,18 @@ function merasSubmit(e) {
             // ── Shop Gallery Lightbox ──────────────────────────
             const gallerySlides = [
                 { type: 'video', caption: 'Step inside the store — Stall No. 18, Bantayan Public Market' },
-                { src: '/images/shop_gallery_1.jpg', caption: 'Store interior — fabrics, school supplies & general merchandise' },
-                { src: '/images/shop_gallery_2.jpg', caption: 'School supplies — notebooks, pens, folders & more' },
-                { src: '/images/shop_gallery_3.jpg', caption: 'Fabrics & textiles — a wide range of colors and patterns' },
-                { src: '/images/shop_gallery_4.jpg', caption: 'Stall No. 18, Bantayan Public Market — visit us anytime!' },
+                { src: 'http://localhost/images/shop_gallery_1.jpg', caption: 'Store interior — fabrics, school supplies & general merchandise' },
+                { src: 'http://localhost/images/shop_gallery_2.jpg', caption: 'School supplies — notebooks, pens, folders & more' },
+                { src: 'http://localhost/images/shop_gallery_3.jpg', caption: 'Fabrics & textiles — a wide range of colors and patterns' },
+                { src: 'http://localhost/images/shop_gallery_4.jpg', caption: 'Stall No. 18, Bantayan Public Market — visit us anytime!' },
             ];
             let galleryCurrent = 0;
 
             // ── Reel loading / failure feedback ────────────────
-            // The file is a couple of megabytes, so on a slow link there is a real
-            // wait before the first frame. Say so, and say it plainly when it fails
-            // outright, rather than leaving a poster that looks broken.
             const galleryVideoStatus = document.getElementById('galleryVideoStatus');
 
             function showVideoStatus(message, isError) {
+                if (!galleryVideoStatus) return;
                 galleryVideoStatus.textContent = '';
 
                 if (!isError) {
@@ -1536,11 +1571,13 @@ function merasSubmit(e) {
             }
 
             function hideVideoStatus() {
+                if (!galleryVideoStatus) return;
                 galleryVideoStatus.hidden = true;
             }
 
             (function wireVideoStatus() {
                 const video = document.getElementById('galleryMainVideo');
+                if (!video) return;
 
                 function reportVideoError() {
                     const reasons = {
@@ -1550,28 +1587,26 @@ function merasSubmit(e) {
                         4: 'the video is missing or in an unsupported format',
                     };
                     const code = video.error ? video.error.code : 0;
-
                     showVideoStatus('Sorry, the shop video could not load - ' + (reasons[code] || 'unknown error') + '.', true);
                 }
 
-                video.addEventListener('loadstart', function () {
-                    showVideoStatus('Loading video...', false);
-                });
                 video.addEventListener('waiting', function () {
-                    showVideoStatus('Buffering...', false);
+                    if (gallerySlides[galleryCurrent]?.type === 'video' && !video.paused) {
+                        showVideoStatus('Buffering...', false);
+                    }
                 });
                 video.addEventListener('canplay', hideVideoStatus);
+                video.addEventListener('canplaythrough', hideVideoStatus);
+                video.addEventListener('loadeddata', hideVideoStatus);
                 video.addEventListener('playing', hideVideoStatus);
+                video.addEventListener('play', hideVideoStatus);
+                video.addEventListener('pause', hideVideoStatus);
+                video.addEventListener('timeupdate', hideVideoStatus);
                 video.addEventListener('error', reportVideoError);
 
-                // preload starts the fetch while the document is still parsing, so
-                // it can succeed or fail before this script ever runs. Catch up on
-                // whatever already happened instead of waiting for an event that
-                // has been and gone.
-                if (video.error) {
-                    reportVideoError();
-                } else if (video.networkState === HTMLMediaElement.NETWORK_LOADING && video.readyState < 3) {
-                    showVideoStatus('Loading video...', false);
+                const source = video.querySelector('source');
+                if (source) {
+                    source.addEventListener('error', reportVideoError);
                 }
             })();
 
@@ -1589,7 +1624,11 @@ function merasSubmit(e) {
                 modal.classList.remove('open');
                 modal.setAttribute('aria-hidden', 'true');
                 document.body.style.overflow = '';
-                document.getElementById('galleryMainVideo').pause();
+                const video = document.getElementById('galleryMainVideo');
+                if (video) {
+                    video.pause();
+                }
+                hideVideoStatus();
             }
 
             function handleGalleryOverlayClick(e) {
@@ -1619,15 +1658,30 @@ function merasSubmit(e) {
                     mainImg.hidden = true;
                     mainVideo.hidden = false;
                     caption.textContent = slide.caption;
-                    // Muted so the browser allows it to roll on its own; the controls
-                    // are there for anyone who wants the sound. Rewinding is only
-                    // legal once metadata exists, and preload="none" means it may
-                    // not yet — a throw here would abort the whole render.
+                    mainVideo.muted = true; // Ensure programmatic autoplay is permitted
+
+                    if (mainVideo.readyState >= 2) {
+                        hideVideoStatus();
+                    } else if (mainVideo.error) {
+                        // Error is handled by wireVideoStatus
+                    } else {
+                        showVideoStatus('Loading video...', false);
+                    }
+
                     if (mainVideo.readyState > 0) {
                         mainVideo.currentTime = 0;
                     }
-                    const started = mainVideo.play();
-                    if (started) started.catch(() => {});
+                    const playPromise = mainVideo.play();
+                    if (playPromise !== undefined) {
+                        playPromise
+                            .then(() => {
+                                hideVideoStatus();
+                            })
+                            .catch(() => {
+                                // If autoplay policy blocks silent start, hide spinner so user can use controls
+                                hideVideoStatus();
+                            });
+                    }
                 } else {
                     mainVideo.pause();
                     mainVideo.hidden = true;

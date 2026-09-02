@@ -74,7 +74,7 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query->orderByDesc('id')->limit(200)->get();
+        $products = $query->orderByDesc('id')->paginate(8)->withQueryString();
 
         $editProduct = null;
         if ($request->filled('edit')) {
