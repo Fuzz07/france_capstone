@@ -117,7 +117,11 @@
                                 </div>
                             @endif
                         </div>
-                       
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                            <button type="button" class="btn-inquire"
+                                onclick="inquireProduct({{ $product->id }}, '{{ addslashes($product->name) }}', 'general')">Inquire</button>
+                            
+                        </div>
                     </div>
                 </div>
             @empty
