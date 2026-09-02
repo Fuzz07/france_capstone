@@ -236,4 +236,29 @@ class BulkPricingAndHandoffTest extends TestCase
         $this->assertSame(8, $paginator->perPage());
         $this->assertCount(8, $paginator->items());
     }
+
+    /** @test */
+    public function activity_logs_are_paginated_by_six()
+    {
+        $this->actingAs($this->admin());
+
+        for ($i = 1; $i <= 10; $i++) {
+            \App\Models\ActivityLog::create([
+                'user_id' => 1,
+                'user_name' => 'Admin User',
+                'user_role' => 'admin',
+                'action' => "action_{$i}",
+                'description' => "Test action {$i}",
+                'ip_address' => '127.0.0.1',
+            ]);
+        }
+
+        $response = $this->get(route('logs.index'));
+        $response->assertStatus(200);
+
+        $paginator = $response->viewData('logs');
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $paginator);
+        $this->assertSame(6, $paginator->perPage());
+        $this->assertCount(6, $paginator->items());
+    }
 }

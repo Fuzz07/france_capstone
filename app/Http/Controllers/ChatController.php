@@ -269,33 +269,83 @@ class ChatController extends Controller
         }
 
         // Product inventory search
-        if (str_contains($lowerMsg, 'product') || str_contains($lowerMsg, 'item') || str_contains($lowerMsg, 'price') || str_contains($lowerMsg, 'stock') || str_contains($lowerMsg, 'inventory') || str_contains($lowerMsg, 'buy') || str_contains($lowerMsg, 'sell') || str_contains($lowerMsg, 'fabric') || str_contains($lowerMsg, 'bag') || str_contains($lowerMsg, 'supply') || str_contains($lowerMsg, 'notebook') || str_contains($lowerMsg, 'pen')) {
-            $products = Product::all();
-            $matchedProducts = [];
-            
-            foreach ($products as $p) {
-                if (str_contains($lowerMsg, strtolower($p->name)) || (isset($p->category) && str_contains($lowerMsg, strtolower($p->category)))) {
-                    $matchedProducts[] = $p;
+        $hasProductIntent = str_contains($lowerMsg, 'product') || str_contains($lowerMsg, 'item') || str_contains($lowerMsg, 'price')
+            || str_contains($lowerMsg, 'stock') || str_contains($lowerMsg, 'quantity') || str_contains($lowerMsg, 'qty')
+            || str_contains($lowerMsg, 'how much') || str_contains($lowerMsg, 'how many') || str_contains($lowerMsg, 'cost')
+            || str_contains($lowerMsg, 'available') || str_contains($lowerMsg, 'availability') || str_contains($lowerMsg, 'left')
+            || str_contains($lowerMsg, 'inventory') || str_contains($lowerMsg, 'buy') || str_contains($lowerMsg, 'sell')
+            || str_contains($lowerMsg, 'fabric') || str_contains($lowerMsg, 'bag') || str_contains($lowerMsg, 'supply')
+            || str_contains($lowerMsg, 'notebook') || str_contains($lowerMsg, 'pen') || str_contains($lowerMsg, 'order');
+
+        $allProducts = Product::all();
+        $matchedProducts = [];
+
+        foreach ($allProducts as $p) {
+            $pName = strtolower($p->name);
+            $pCat = isset($p->category) ? strtolower($p->category) : '';
+            if (str_contains($lowerMsg, $pName) || ($pCat && str_contains($lowerMsg, $pCat))) {
+                $matchedProducts[] = $p;
+            } elseif ($hasProductIntent) {
+                // Check if distinct words from product name appear in message
+                $words = array_filter(explode(' ', $pName), fn($w) => strlen($w) >= 3);
+                foreach ($words as $word) {
+                    if (str_contains($lowerMsg, $word)) {
+                        $matchedProducts[] = $p;
+                        break;
+                    }
                 }
             }
+        }
 
+        if ($hasProductIntent || count($matchedProducts) > 0) {
             if (count($matchedProducts) > 0) {
-                $productListMsg = "🛍️ Matching Products Found:\n";
                 $productItems = [];
-                foreach (array_slice($matchedProducts, 0, 4) as $p) {
+                $isSingle = count($matchedProducts) === 1;
+
+                if ($isSingle) {
+                    $p = $matchedProducts[0];
+                    $unit = $p->unit ?: 'pcs';
                     $status = $p->quantity > 10 ? "🟢 In Stock" : ($p->quantity > 0 ? "🟡 Low Stock ({$p->quantity} left)" : "🔴 Out of Stock");
-                    $productListMsg .= "• {$p->name} — ₱" . number_format($p->price, 2) . " ({$status})\n";
+                    
+                    $productListMsg = "🛍️ {$p->name}:\n"
+                        . "• Price: ₱" . number_format($p->price, 2) . " / {$unit}\n"
+                        . "• Quantity: {$p->quantity} {$unit} ({$status})\n";
+                    
+                    if ($p->hasBulkPricing()) {
+                        $productListMsg .= "• Bulk Price: ₱" . number_format($p->bulk_price, 2) . " (at {$p->bulk_min_qty}+ {$unit})\n";
+                    }
+                    $productListMsg .= "\n👉 Click on the product card below to view and purchase this item directly in the catalog!";
+
                     $productItems[] = [
                         'id' => $p->id,
                         'name' => $p->name,
                         'price' => '₱' . number_format($p->price, 2),
                         'quantity' => $p->quantity,
+                        'unit' => $unit,
                         'status' => $status,
                         'category' => $p->category ?? 'Merchandise',
+                        'url' => route('home') . '#product-' . $p->id,
                     ];
+                } else {
+                    $productListMsg = "🛍️ Matching Products Found:\n";
+                    foreach (array_slice($matchedProducts, 0, 4) as $p) {
+                        $unit = $p->unit ?: 'pcs';
+                        $status = $p->quantity > 10 ? "🟢 In Stock" : ($p->quantity > 0 ? "🟡 Low Stock ({$p->quantity} left)" : "🔴 Out of Stock");
+                        $productListMsg .= "• {$p->name} — ₱" . number_format($p->price, 2) . " ({$p->quantity} {$unit} left, {$status})\n";
+                        $productItems[] = [
+                            'id' => $p->id,
+                            'name' => $p->name,
+                            'price' => '₱' . number_format($p->price, 2),
+                            'quantity' => $p->quantity,
+                            'unit' => $unit,
+                            'status' => $status,
+                            'category' => $p->category ?? 'Merchandise',
+                            'url' => route('home') . '#product-' . $p->id,
+                        ];
+                    }
+                    $productListMsg .= "\n👉 Click on any item below to view it directly in our catalog!";
                 }
-                $productListMsg .= "\nFeel free to ask about another item or view all items in our catalog!";
-                
+
                 return [
                     'reply' => $productListMsg,
                     'suggestions' => ["Store Hours 🕒", "Location 📍", "Payment Methods 💳"],
@@ -303,23 +353,26 @@ class ChatController extends Controller
                 ];
             }
 
-            // Featured items if no direct search match
+            // Featured items if general product intent without specific match
             $featured = Product::where('quantity', '>', 0)->limit(4)->get();
             $featuredMsg = "🛍️ Featured Store Products:\n";
             $productItems = [];
             foreach ($featured as $f) {
-                $status = "🟢 In Stock (" . $f->quantity . " left)";
+                $unit = $f->unit ?: 'pcs';
+                $status = "🟢 In Stock (" . $f->quantity . " " . $unit . " left)";
                 $featuredMsg .= "• {$f->name} — ₱" . number_format($f->price, 2) . "\n";
                 $productItems[] = [
                     'id' => $f->id,
                     'name' => $f->name,
                     'price' => '₱' . number_format($f->price, 2),
                     'quantity' => $f->quantity,
+                    'unit' => $unit,
                     'status' => $status,
                     'category' => $f->category ?? 'Merchandise',
+                    'url' => route('home') . '#product-' . $f->id,
                 ];
             }
-            $featuredMsg .= "\nYou can also search for a specific product by name!";
+            $featuredMsg .= "\n👉 Click on any product below to view it, or ask about a specific item by name!";
 
             return [
                 'reply' => $featuredMsg,

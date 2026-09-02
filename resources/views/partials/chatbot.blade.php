@@ -330,12 +330,28 @@
     border-radius: 10px !important;
     padding: 8px 12px !important;
     font-size: 0.82rem !important;
+    display: block !important;
+    text-decoration: none !important;
+    transition: border-color 0.15s, background 0.15s, transform 0.12s !important;
+    cursor: pointer !important;
+}
+
+a.meras-prod-card:hover {
+    background: #e8f0fe !important;
+    border-color: #4f46e5 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.12) !important;
+    text-decoration: none !important;
 }
 
 .meras-prod-name {
     font-weight: 700 !important;
     color: #0f172a !important;
     font-size: 0.84rem !important;
+}
+
+a.meras-prod-card:hover .meras-prod-name {
+    color: #4f46e5 !important;
 }
 
 .meras-prod-row {
@@ -354,6 +370,22 @@
 .meras-prod-stock {
     font-size: 0.74rem !important;
     font-weight: 600 !important;
+}
+
+.meras-prod-qty {
+    font-size: 0.73rem !important;
+    color: #64748b !important;
+    margin-top: 3px !important;
+}
+
+.meras-prod-view {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    margin-top: 6px !important;
+    font-size: 0.74rem !important;
+    font-weight: 700 !important;
+    color: #4f46e5 !important;
 }
 
 /* Typing Indicator */
@@ -612,12 +644,23 @@ function merasAppendBot(reply, products, suggestions, handoff) {
     if (products && products.length) {
         html += '<div class="meras-prod-grid">';
         products.forEach(function(p) {
-            html += '<div class="meras-prod-card">' +
+            var tag = p.url ? 'a' : 'div';
+            var openTag = p.url
+                ? '<a class="meras-prod-card" href="' + merasEsc(p.url) + '" target="_blank" rel="noopener noreferrer">'
+                : '<div class="meras-prod-card">';
+            var closeTag = p.url ? '</a>' : '</div>';
+            var unit = p.unit || 'pcs';
+            var qtyText = (p.quantity > 0) ? (p.quantity + ' ' + unit + ' available') : 'Out of stock';
+            var viewArrow = p.url ? '<div class="meras-prod-view">View Item &rarr;</div>' : '';
+            html += openTag +
                 '<div class="meras-prod-name">' + merasEsc(p.name) + '</div>' +
                 '<div class="meras-prod-row">' +
                 '<span class="meras-prod-price">' + merasEsc(p.price) + '</span>' +
                 '<span class="meras-prod-stock">' + merasEsc(p.status) + '</span>' +
-                '</div></div>';
+                '</div>' +
+                '<div class="meras-prod-qty">' + merasEsc(qtyText) + '</div>' +
+                viewArrow +
+                closeTag;
         });
         html += '</div>';
     }

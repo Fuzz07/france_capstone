@@ -69,7 +69,7 @@
 
     <div class="product-grid" id="landingProductGrid">
         @forelse($products as $product)
-            <div class="product-card" data-name="{{ strtolower($product->name) }}" data-sku="{{ strtolower($product->sku ?? '') }}" data-cat="{{ $product->category ?? '' }}">
+            <div class="product-card" id="product-{{ $product->id }}" data-name="{{ strtolower($product->name) }}" data-sku="{{ strtolower($product->sku ?? '') }}" data-cat="{{ $product->category ?? '' }}">
                 <div class="prod-header">
                     @if($product->category)
                         <span class="prod-category">{{ $product->category }}</span>

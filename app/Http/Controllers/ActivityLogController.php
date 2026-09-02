@@ -38,8 +38,8 @@ class ActivityLogController extends Controller
             });
         }
 
-        // Fetch logs with 100 items per page
-        $logs = $query->orderByDesc('id')->paginate(100)->withQueryString();
+        // Fetch logs with 6 items per page
+        $logs = $query->orderByDesc('id')->paginate(6)->withQueryString();
 
         // Stats for metrics card
         $totalLogsCount = ActivityLog::count();
