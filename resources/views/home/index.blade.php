@@ -117,17 +117,7 @@
                                 </div>
                             @endif
                         </div>
-                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
-                            <button type="button" class="btn-inquire"
-                                onclick="inquireProduct({{ $product->id }}, '{{ addslashes($product->name) }}', 'general')">Inquire</button>
-                            @if($product->quantity > 0)
-                                <button type="button" class="btn-inquire-all"
-                                    onclick="inquireProduct({{ $product->id }}, '{{ addslashes($product->name) }}', 'purchase_all', {{ $product->quantity }}, {{ (float) $product->price }}, {{ $product->hasBulkPricing() ? (float) $product->bulk_price : 'null' }}, {{ $product->bulk_min_qty ?? 'null' }}, '{{ addslashes($product->unit ?: 'pcs') }}')"
-                                    title="Inquire to purchase all available stock ({{ $product->quantity }} {{ $product->unit ?: 'pcs' }})">
-                                    Purchase All ({{ $product->quantity }})
-                                </button>
-                            @endif
-                        </div>
+                       
                     </div>
                 </div>
             @empty
