@@ -2,6 +2,225 @@
 
 @section('title', "Welcome to " . config('app.name'))
 
+@push('styles')
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <style>
+        /* ── Catalog View Switcher ── */
+        .catalog-view-switcher {
+            display: inline-flex;
+            align-items: center;
+            background: #f1f5f9;
+            border: 1px solid var(--lp-border, #e2e8f0);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+            margin-left: auto;
+        }
+        .btn-catalog-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border: none;
+            background: transparent;
+            color: var(--lp-text-muted, #64748b);
+            font-size: 0.88rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-catalog-toggle:hover {
+            color: var(--lp-secondary, #0f172a);
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .btn-catalog-toggle.active {
+            background: var(--lp-primary, #4f46e5);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.28);
+        }
+        .btn-catalog-toggle svg {
+            flex-shrink: 0;
+        }
+
+        /* ── Customer DataTable Card ── */
+        .landing-datatable-card {
+            background: #ffffff;
+            border: 1px solid var(--lp-border, #e2e8f0);
+            border-radius: var(--radius-xl, 20px);
+            padding: 24px;
+            box-shadow: var(--lp-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+            margin-bottom: 40px;
+        }
+
+        /* DataTable Table Element */
+        table.customer-datatable {
+            width: 100% !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            font-family: inherit;
+            color: var(--lp-text, #1e293b);
+        }
+        table.customer-datatable thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 16px;
+            border-bottom: 2px solid #e2e8f0 !important;
+            vertical-align: middle;
+        }
+        table.customer-datatable tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            font-size: 0.92rem;
+        }
+        table.customer-datatable tbody tr {
+            transition: background-color 0.15s ease;
+        }
+        table.customer-datatable tbody tr:hover {
+            background-color: #f8fafc !important;
+        }
+
+        /* Cell typography & elements */
+        .dt-prod-name {
+            font-weight: 600;
+            color: var(--lp-secondary, #0f172a);
+            line-height: 1.35;
+            margin-bottom: 4px;
+        }
+        .dt-prod-sku {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--lp-text-muted, #64748b);
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 2px 6px;
+        }
+        .dt-category-pill {
+            display: inline-block;
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: var(--lp-primary, #4f46e5);
+            background: var(--lp-primary-light, #eef2ff);
+            border: 1px solid #e0e7ff;
+            border-radius: 20px;
+            padding: 3px 10px;
+        }
+        .dt-prod-price {
+            font-weight: 700;
+            color: var(--lp-secondary, #0f172a);
+            font-size: 1.05rem;
+        }
+        .btn-inquire-table {
+            padding: 7px 16px !important;
+            font-size: 0.85rem !important;
+            border-radius: 8px !important;
+            background: var(--lp-primary, #4f46e5) !important;
+            color: #fff !important;
+            border: none !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-inquire-table:hover {
+            background: var(--lp-primary-hover, #4338ca) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+        }
+
+        /* Stock status pills */
+        .dt-stock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .dt-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dt-stock-in { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .dt-dot-in { background: #10b981; }
+        .dt-stock-low { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+        .dt-dot-low { background: #f59e0b; }
+        .dt-stock-out { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .dt-dot-out { background: #ef4444; }
+
+        /* DataTables controls override */
+        .dataTables_wrapper {
+            padding: 4px 0;
+        }
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 16px;
+            color: #475569;
+            font-size: 0.88rem;
+        }
+        .dataTables_wrapper .dataTables_length select,
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 6px 12px;
+            background: #ffffff;
+            outline: none;
+            color: #1e293b;
+            font-family: inherit;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .dataTables_wrapper .dataTables_length select:focus,
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: var(--lp-primary, #4f46e5);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            margin-top: 18px;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 6px !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 5px 12px !important;
+            margin: 0 2px !important;
+            font-size: 0.85rem !important;
+            background: #ffffff !important;
+            color: #475569 !important;
+            transition: all 0.15s ease !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background: var(--lp-primary, #4f46e5) !important;
+            color: #ffffff !important;
+            border-color: var(--lp-primary, #4f46e5) !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #ffffff !important;
+        }
+    </style>
+@endpush
+
 @section('content')
     <!-- Hero Section -->
     <section class="hero-section">
@@ -71,8 +290,8 @@
         <!-- Filter Card -->
         <div class="filter-card">
             <input type="text" id="landingSearch" placeholder="Search products by name or SKU..." class="form-control-lp"
-                style="flex: 2; min-width: 260px;">
-            <select id="categoryFilter" class="form-control-lp" style="flex: 1; min-width: 200px;">
+                style="flex: 2; min-width: 240px;">
+            <select id="categoryFilter" class="form-control-lp" style="flex: 1; min-width: 180px;">
                 <option value="">All Categories</option>
                 @php
                     $categories = $products->pluck('category')->unique()->filter();
@@ -81,6 +300,16 @@
                     <option value="{{ $cat }}">{{ $cat }}</option>
                 @endforeach
             </select>
+            <div class="catalog-view-switcher" role="group" aria-label="Product display mode">
+                <button type="button" class="btn-catalog-toggle active" id="btnViewGrid" title="Switch to Cards Grid View">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span>Grid View</span>
+                </button>
+                <button type="button" class="btn-catalog-toggle" id="btnViewTable" title="Switch to Data Table View">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    <span>DataTable</span>
+                </button>
+            </div>
         </div>
 
         <div class="product-grid" id="landingProductGrid">
@@ -120,7 +349,6 @@
                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
                             <button type="button" class="btn-inquire"
                                 onclick="inquireProduct({{ $product->id }}, '{{ addslashes($product->name) }}', 'general')">Inquire</button>
-                            
                         </div>
                     </div>
                 </div>
@@ -137,6 +365,67 @@
                         inventory.</p>
                 </div>
             @endforelse
+        </div>
+
+        <!-- DataTable View (Interactive Customer Products Table) -->
+        <div class="landing-datatable-card" id="landingProductDataTableWrapper" style="display: none;">
+            <div class="table-responsive">
+                <table id="customerProductsDataTable" class="customer-datatable" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th style="text-align:center;">Stock Status</th>
+                            <th style="text-align:right;">Price</th>
+                            <th style="text-align:center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($products as $product)
+                            <tr id="table-product-{{ $product->id }}">
+                                <td>
+                                    <div class="dt-prod-name">{{ $product->name }}</div>
+                                    @if($product->sku)
+                                        <span class="dt-prod-sku">SKU: {{ $product->sku }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="dt-category-pill">{{ $product->category ?: 'General' }}</span>
+                                </td>
+                                <td style="text-align:center;" data-order="{{ $product->quantity }}">
+                                    @if($product->quantity > 10)
+                                        <span class="dt-stock-badge dt-stock-in">
+                                            <span class="dt-dot dt-dot-in"></span>In Stock ({{ $product->quantity }} {{ $product->unit ?: 'pcs' }})
+                                        </span>
+                                    @elseif($product->quantity > 0)
+                                        <span class="dt-stock-badge dt-stock-low">
+                                            <span class="dt-dot dt-dot-low"></span>Low Stock ({{ $product->quantity }} {{ $product->unit ?: 'pcs' }} left)
+                                        </span>
+                                    @else
+                                        <span class="dt-stock-badge dt-stock-out">
+                                            <span class="dt-dot dt-dot-out"></span>Out of Stock
+                                        </span>
+                                    @endif
+                                </td>
+                                <td style="text-align:right;" data-order="{{ $product->price }}">
+                                    <div class="dt-prod-price">₱{{ number_format($product->price, 2) }}</div>
+                                    @if($product->hasBulkPricing())
+                                        <div class="landing-bulk-tag" style="display:inline-block;margin-top:2px;">
+                                            Bulk: ₱{{ number_format($product->bulk_price, 2) }} ({{ $product->bulk_min_qty }}+ pcs)
+                                        </div>
+                                    @endif
+                                </td>
+                                <td style="text-align:center;">
+                                    <button type="button" class="btn-inquire btn-inquire-table"
+                                        onclick="inquireProduct({{ $product->id }}, '{{ addslashes($product->name) }}', 'general')">
+                                        Inquire
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </section>
 
@@ -344,17 +633,90 @@
     </div>
 
     @push('scripts')
+        <!-- jQuery & DataTables CDN -->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
         <script>
+            let customerDataTable = null;
+
+            function initCustomerDataTable() {
+                if (window.jQuery && $.fn.DataTable && !customerDataTable) {
+                    customerDataTable = $('#customerProductsDataTable').DataTable({
+                        responsive: true,
+                        pageLength: 10,
+                        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                        order: [[0, 'asc']],
+                        language: {
+                            search: "Filter in Table:",
+                            searchPlaceholder: "Search records...",
+                            lengthMenu: "Show _MENU_ products",
+                            info: "Showing _START_ to _END_ of _TOTAL_ products",
+                            infoEmpty: "Showing 0 to 0 of 0 products",
+                            emptyTable: "No products available in this catalog",
+                            zeroRecords: "No matching products found",
+                            paginate: {
+                                first: "&laquo;",
+                                previous: "&lsaquo;",
+                                next: "&rsaquo;",
+                                last: "&raquo;"
+                            }
+                        },
+                        columnDefs: [
+                            { orderable: false, targets: [4] }
+                        ]
+                    });
+                }
+            }
+
+            function setCatalogView(mode) {
+                const grid = document.getElementById('landingProductGrid');
+                const tableWrapper = document.getElementById('landingProductDataTableWrapper');
+                const btnGrid = document.getElementById('btnViewGrid');
+                const btnTable = document.getElementById('btnViewTable');
+
+                if (!grid || !tableWrapper) return;
+
+                if (mode === 'table') {
+                    grid.style.display = 'none';
+                    tableWrapper.style.display = 'block';
+                    if (btnGrid) btnGrid.classList.remove('active');
+                    if (btnTable) btnTable.classList.add('active');
+                    initCustomerDataTable();
+                    if (customerDataTable) {
+                        customerDataTable.columns.adjust().draw();
+                    }
+                    try { localStorage.setItem('meras_catalog_view', 'table'); } catch(e){}
+                } else {
+                    grid.style.display = 'grid';
+                    tableWrapper.style.display = 'none';
+                    if (btnTable) btnTable.classList.remove('active');
+                    if (btnGrid) btnGrid.classList.add('active');
+                    try { localStorage.setItem('meras_catalog_view', 'grid'); } catch(e){}
+                }
+            }
+
             // Filter products by category and search
             function filterProducts() {
                 const query = document.getElementById('landingSearch').value.toLowerCase().trim();
                 const cat = document.getElementById('categoryFilter').value;
 
+                // 1. Filter Grid Cards
                 document.querySelectorAll('#landingProductGrid .product-card').forEach(card => {
                     const matchName = card.dataset.name.includes(query) || card.dataset.sku.includes(query);
                     const matchCat = cat === "" || card.dataset.cat === cat;
                     card.style.display = (matchName && matchCat) ? 'flex' : 'none';
                 });
+
+                // 2. Filter DataTable if present
+                if (customerDataTable) {
+                    customerDataTable.search(query);
+                    if (cat) {
+                        customerDataTable.column(1).search(cat ? '^' + cat + '$' : '', true, false);
+                    } else {
+                        customerDataTable.column(1).search('');
+                    }
+                    customerDataTable.draw();
+                }
             }
 
             // Pre-select product and scroll to form
@@ -472,6 +834,21 @@
             window.addEventListener('hashchange', handleTabSwitching);
             window.addEventListener('resize', handleTabSwitching);
             handleTabSwitching();
+
+            // View Switcher event listeners
+            const btnViewGrid = document.getElementById('btnViewGrid');
+            const btnViewTable = document.getElementById('btnViewTable');
+            if (btnViewGrid) btnViewGrid.addEventListener('click', () => setCatalogView('grid'));
+            if (btnViewTable) btnViewTable.addEventListener('click', () => setCatalogView('table'));
+
+            const savedCatalogView = (function() {
+                try { return localStorage.getItem('meras_catalog_view'); } catch(e) { return null; }
+            })();
+            if (savedCatalogView === 'table') {
+                setCatalogView('table');
+            } else {
+                setTimeout(initCustomerDataTable, 350);
+            }
 
             // Attach event listeners
             document.getElementById('categoryFilter').addEventListener('change', filterProducts);

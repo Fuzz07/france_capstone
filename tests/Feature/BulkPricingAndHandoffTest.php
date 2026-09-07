@@ -59,7 +59,7 @@ class BulkPricingAndHandoffTest extends TestCase
 
         $third = $this->postJson(route('chat.bot-response'), ['message' => 'where are you located?']);
         $this->assertNotNull($third->json('handoff'), 'Handoff must be offered on the third message.');
-        $this->assertSame('https://m.me/JohhFranceDescartinQuijano', $third->json('handoff.url'));
+        $this->assertStringContainsString('facebook.com', $third->json('handoff.url'));
         $this->assertSame("Mera's Merchandise", $third->json('handoff.name'));
 
         // Offered once; the bot keeps answering normally afterwards.

@@ -82,11 +82,11 @@ class SettingsController extends Controller
                 // --- School Supplies ---
                 ['SCH-NOTE-80', 'Spiral Notebook 80 Pages', 'School Supplies', 25.00, 100],
                 ['SCH-GELPEN', 'Black Gel Pen 0.5mm', 'School Supplies', 15.00, 150],
-                ['SCH-PENCILS', 'No. 2 HB Pencil (Set of 12)', 'School Supplies', 85.00, 50],
+                ['SCH-PENCILS', 'Faber-Castell 2B Pencil (Set of 12)', 'School Supplies', 85.00, 50],
                 ['SCH-PAD-YLW', 'Yellow Pad Paper 80 Leaves', 'School Supplies', 45.00, 90],
                 ['SCH-CRAYON24', 'Crayons 24 Colors', 'School Supplies', 65.00, 60],
                 ['SCH-HIGHLIGHT', 'Highlighter Marker Set (4 Colors)', 'School Supplies', 55.00, 80],
-                ['SCH-ERASER', 'Eraser (Pack of 2)', 'School Supplies', 20.00, 120],
+                ['SCH-ERASER', 'Faber-Castell Dust-Free Eraser (Pack of 2)', 'School Supplies', 20.00, 120],
                 ['SCH-RULER-30', 'Plastic Ruler 30cm', 'School Supplies', 18.00, 140],
                 ['SCH-GLUESTICK', 'Glue Stick (20g)', 'School Supplies', 30.00, 100],
                 ['SCH-TAPE', 'Scotch Tape 1 inch (Roll)', 'School Supplies', 28.00, 110],

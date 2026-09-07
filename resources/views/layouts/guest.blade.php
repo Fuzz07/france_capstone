@@ -110,6 +110,8 @@
             }
         </style>
     @endif
+
+    @stack('styles')
 </head>
 <body>
     @if(!$isMobileApp)

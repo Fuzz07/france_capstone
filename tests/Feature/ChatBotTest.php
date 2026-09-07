@@ -77,6 +77,92 @@ class ChatBotTest extends TestCase
     }
 
     /** @test */
+    public function customer_asking_for_faber_castel_eraser_ranks_it_first_among_faber_castel_products()
+    {
+        // Create multiple Faber-Castell products where pencil is inserted before eraser
+        \App\Models\Product::create([
+            'sku' => 'SCH-FC-PENCIL',
+            'name' => 'Faber-Castell 2B Pencil',
+            'category' => 'School Supplies',
+            'price' => 95.00,
+            'quantity' => 50,
+        ]);
+        \App\Models\Product::create([
+            'sku' => 'SCH-FC-BALLPEN',
+            'name' => 'Faber-Castell Ballpen 0.7mm',
+            'category' => 'School Supplies',
+            'price' => 20.00,
+            'quantity' => 60,
+        ]);
+        \App\Models\Product::create([
+            'sku' => 'SCH-FC-ERASER',
+            'name' => 'Faber-Castell Dust-Free Eraser',
+            'category' => 'School Supplies',
+            'price' => 22.00,
+            'quantity' => 100,
+        ]);
+        \App\Models\Product::create([
+            'sku' => 'SCH-GEN-ERASER',
+            'name' => 'Generic White Eraser',
+            'category' => 'School Supplies',
+            'price' => 15.00,
+            'quantity' => 40,
+        ]);
+
+        // Query with single 'l' typo "faber castel eraser"
+        $response = $this->postJson(route('chat.bot-response'), [
+            'message' => 'do you have faber castel eraser?'
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $responseData = $response->json();
+        $this->assertNotEmpty($responseData['products']);
+
+        // Faber-Castell Dust-Free Eraser MUST be the first product on the list
+        $this->assertEquals('Faber-Castell Dust-Free Eraser', $responseData['products'][0]['name']);
+
+        // Check that the text reply also lists the eraser first
+        $reply = $responseData['reply'];
+        $eraserPos = strpos($reply, 'Faber-Castell Dust-Free Eraser');
+        $pencilPos = strpos($reply, 'Faber-Castell 2B Pencil');
+
+        $this->assertNotFalse($eraserPos);
+        if ($pencilPos !== false) {
+            $this->assertLessThan($pencilPos, $eraserPos, 'Faber-Castell Eraser must appear before Faber-Castell Pencil');
+        }
+    }
+
+    /** @test */
+    public function bot_product_relevance_search_is_applicable_to_all_queries()
+    {
+        \App\Models\Product::create([
+            'sku' => 'SCH-PAD-YLW',
+            'name' => 'Yellow Pad Paper 80 Leaves',
+            'category' => 'School Supplies',
+            'price' => 45.00,
+            'quantity' => 80,
+        ]);
+        \App\Models\Product::create([
+            'sku' => 'SCH-NOTE-80',
+            'name' => 'Spiral Notebook 80 Pages',
+            'category' => 'School Supplies',
+            'price' => 25.00,
+            'quantity' => 100,
+        ]);
+
+        $response = $this->postJson(route('chat.bot-response'), [
+            'message' => 'how much is yellow pad paper'
+        ]);
+
+        $response->assertStatus(200);
+        $responseData = $response->json();
+        $this->assertNotEmpty($responseData['products']);
+        $this->assertEquals('Yellow Pad Paper 80 Leaves', $responseData['products'][0]['name']);
+    }
+
+    /** @test */
     public function customer_message_triggers_automated_bot_response()
     {
         $customer = User::create([
