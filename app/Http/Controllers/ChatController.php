@@ -11,11 +11,21 @@ use Illuminate\Http\Request;
 class ChatController extends Controller
 {
     /** Live Messenger account customers are handed off to when the bot is not enough. */
-    private const MESSENGER_URL = 'https://web.facebook.com/profile.php?id=100063831981795&rdid=J0BCP6eqTK2B8p6d&share_url=https%3A%2F%2Fweb.facebook.com%2Fshare%2F1Bqoxp5CiZ%2F%3F_rdc%3D1%26_rdr#';
-    private const MESSENGER_NAME = "Mera's Merchandise";
+    public const MESSENGER_URL = 'https://web.facebook.com/profile.php?id=100063831981795&rdid=J0BCP6eqTK2B8p6d&share_url=https%3A%2F%2Fweb.facebook.com%2Fshare%2F1Bqoxp5CiZ%2F%3F_rdc%3D1%26_rdr#';
+    public const MESSENGER_NAME = "Mera's Merchandise";
 
     /** Number of customer messages after which the Messenger handoff is offered. */
-    private const HANDOFF_AFTER_MESSAGES = 3;
+    public const HANDOFF_AFTER_MESSAGES = 3;
+
+    public static function getMessengerHandoff(?string $customText = null): array
+    {
+        return [
+            'name' => self::MESSENGER_NAME,
+            'url' => self::MESSENGER_URL,
+            'label' => 'Chat live on Messenger',
+            'text' => $customText ?? ("💬 Want to talk to a real person?\nYou have asked a few questions already, so " . self::MESSENGER_NAME . " can help you live on Messenger for anything I miss."),
+        ];
+    }
 
     /**
      * Count the customer's messages and decide whether it is time to offer a live
@@ -31,12 +41,7 @@ class ChatController extends Controller
 
         $request->session()->put('chatbot_handoff_offered', true);
 
-        return [
-            'name' => self::MESSENGER_NAME,
-            'url' => self::MESSENGER_URL,
-            'label' => 'Chat live on Messenger',
-            'text' => "💬 Want to talk to a real person?\nYou have asked a few questions already, so " . self::MESSENGER_NAME . " can help you live on Messenger for anything I miss.",
-        ];
+        return self::getMessengerHandoff();
     }
 
     public function index()
@@ -142,7 +147,8 @@ class ChatController extends Controller
         // Automated Chatbot Response for Customers!
         if ($user->role === 'user') {
             $userMessage = $request->input('message');
-            $botReply = $this->getBotResponse($userMessage);
+            $botData = $this->getDetailedBotResponse($userMessage);
+            $botReply = $botData['reply'];
 
             if ($botReply) {
                 Message::create([
@@ -151,7 +157,9 @@ class ChatController extends Controller
                 ]);
             }
 
-            if ($handoff = $this->resolveHandoff($request)) {
+            $handoff = (!empty($botData['force_handoff'])) ? self::getMessengerHandoff() : $this->resolveHandoff($request);
+
+            if ($handoff) {
                 Message::create([
                     'user_name' => "Mera's Support Bot",
                     'message' => $handoff['text'] . "\n" . $handoff['url'],
@@ -184,7 +192,7 @@ class ChatController extends Controller
         }
 
         $botData = $this->getDetailedBotResponse($userMessage);
-        $handoff = $this->resolveHandoff($request);
+        $handoff = (!empty($botData['force_handoff'])) ? self::getMessengerHandoff() : $this->resolveHandoff($request);
 
         // Save bot response to conversation if user is logged in
         if (auth()->check()) {
@@ -226,7 +234,20 @@ class ChatController extends Controller
     private function getDetailedBotResponse($message)
     {
         $lowerMsg = strtolower(trim($message));
-        $defaultSuggestions = ["Store Hours 🕒", "Location 📍", "Check Products 🛍️", "Payment Methods 💳"];
+        $defaultSuggestions = ["Store Hours 🕒", "Location 📍", "Check Products 🛍️", "Payment Methods 💳", "Messenger 💬"];
+
+        // Live Messenger / Real person intent
+        if (str_contains($lowerMsg, 'messenger') || str_contains($lowerMsg, 'chat live') || str_contains($lowerMsg, 'live chat')
+            || str_contains($lowerMsg, 'human') || str_contains($lowerMsg, 'agent') || str_contains($lowerMsg, 'person')
+            || str_contains($lowerMsg, 'staff') || str_contains($lowerMsg, 'talk to someone') || str_contains($lowerMsg, 'real person')
+            || str_contains($lowerMsg, 'talk to person') || str_contains($lowerMsg, 'speak with') || str_contains($lowerMsg, 'facebook')
+            || str_contains($lowerMsg, 'fb')) {
+            return [
+                'reply' => "💬 Want to chat with a real person?\nYou can talk to us live on Messenger for immediate personal assistance from our team!",
+                'suggestions' => ["Store Hours 🕒", "Location 📍", "Check Products 🛍️"],
+                'force_handoff' => true,
+            ];
+        }
 
         // Greeting intents
         if (preg_match('/\b(hi|hello|hey|greetings|good morning|good afternoon|good evening|hello bot|help|start)\b/', $lowerMsg)) {

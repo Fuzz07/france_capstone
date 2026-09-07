@@ -261,10 +261,18 @@
                         @endif
                     </div>
                 </div>
-                <button type="button" class="chat-clear-btn" onclick="clearInput()" title="Clear input">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                    Clear
-                </button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <a href="{{ \App\Http\Controllers\ChatController::MESSENGER_URL }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background: linear-gradient(90deg, #0084ff 0%, #a033ff 100%); color: #fff; border: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; text-decoration: none;" title="Chat live on Messenger">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.19.16.15.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.99-.88c.17-.07.36-.09.53-.04 1.05.29 2.17.44 3.32.44 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm5.6 7.28-2.94 4.66c-.47.74-1.47.93-2.18.4l-2.34-1.75a.6.6 0 0 0-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.18-.4l2.34 1.75c.21.16.51.16.72 0l3.16-2.4c.42-.32.97.18.69.63z"/>
+                        </svg>
+                        <span>Chat live on Messenger</span>
+                    </a>
+                    <button type="button" class="chat-clear-btn" onclick="clearInput()" title="Clear input">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                        Clear
+                    </button>
+                </div>
             </div>
 
             <div class="chat-box" id="chatbox">
@@ -298,6 +306,7 @@
             <div class="chat-quick-replies" id="quickReplies">
                 @if(!auth()->check() || auth()->user()->role === 'user')
                     <span class="chat-quick-label">Frequently Asked:</span>
+                    <button type="button" class="chat-quick-btn" onclick="setMsg('Can I chat live on Messenger?')">Messenger 💬</button>
                     <button type="button" class="chat-quick-btn" onclick="setMsg('What are your store hours?')">Store Hours 🕒</button>
                     <button type="button" class="chat-quick-btn" onclick="setMsg('Where is your store located?')">Location 📍</button>
                     <button type="button" class="chat-quick-btn" onclick="setMsg('What products do you have in stock?')">Products 🛍️</button>

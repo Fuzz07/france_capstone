@@ -1,6 +1,9 @@
 {{-- Mera's Floating AI Chatbot Widget --}}
 @php
-    $isMobileWebview = session('is_mobile_app', false) || (isset($_SERVER['HTTP_USER_AGENT']) && str_contains($_SERVER['HTTP_USER_AGENT'] ?? '', 'MerasUserApp'));
+    $isMobileWebview = str_contains($_SERVER['HTTP_USER_AGENT'] ?? '', 'MerasUserApp')
+        || (session('is_mobile_app', false) && (request()->is('user-app*') || request()->routeIs('mobile.*')));
+    $messengerUrl = \App\Http\Controllers\ChatController::MESSENGER_URL;
+    $messengerName = \App\Http\Controllers\ChatController::MESSENGER_NAME;
 @endphp
 @if(!$isMobileWebview)
 <div class="meras-chatbot-wrap" id="merasChatbotWrap">
@@ -31,13 +34,21 @@
                     </div>
                 </div>
             </div>
-            <button class="meras-close-btn" id="merasCloseBtn" aria-label="Close chat">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <a href="{{ $messengerUrl }}" target="_blank" rel="noopener noreferrer" class="meras-head-messenger-btn" title="Chat live on Messenger" aria-label="Chat live on Messenger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.19.16.15.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.99-.88c.17-.07.36-.09.53-.04 1.05.29 2.17.44 3.32.44 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm5.6 7.28-2.94 4.66c-.47.74-1.47.93-2.18.4l-2.34-1.75a.6.6 0 0 0-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.18-.4l2.34 1.75c.21.16.51.16.72 0l3.16-2.4c.42-.32.97.18.69.63z"/>
+                    </svg>
+                    <span>Messenger</span>
+                </a>
+                <button class="meras-close-btn" id="merasCloseBtn" aria-label="Close chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         {{-- Messages --}}
@@ -47,6 +58,17 @@
                 <div class="meras-msg-bbl">
                     👋 Hello! Welcome to <strong>Mera's General Merchandise</strong>!<br>
                     How can I help you today?
+
+                    {{-- Live Messenger Card – always visible in the welcome bubble on desktop --}}
+                    <div class="meras-handoff" style="margin-top: 10px; display: block !important;">
+                        <div class="meras-handoff-text">💬 Want to talk to a real person? We can assist you live:</div>
+                        <a class="meras-handoff-btn" href="{{ $messengerUrl }}" target="_blank" rel="noopener noreferrer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.19.16.15.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.99-.88c.17-.07.36-.09.53-.04 1.05.29 2.17.44 3.32.44 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm5.6 7.28-2.94 4.66c-.47.74-1.47.93-2.18.4l-2.34-1.75a.6.6 0 0 0-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.18-.4l2.34 1.75c.21.16.51.16.72 0l3.16-2.4c.42-.32.97.18.69.63z"/>
+                            </svg>
+                            Chat live on Messenger
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -54,6 +76,7 @@
         {{-- Suggestion Chips --}}
         <div class="meras-chips-bar" id="merasChipsBar">
             <div class="meras-chips-row" id="merasChipsRow">
+                <button type="button" class="meras-chip" onclick="merasSendChip('Can I chat live on Messenger?')">Messenger 💬</button>
                 <button type="button" class="meras-chip" onclick="merasSendChip('What are your store hours?')">Store Hours 🕒</button>
                 <button type="button" class="meras-chip" onclick="merasSendChip('Where is your store located?')">Location 📍</button>
                 <button type="button" class="meras-chip" onclick="merasSendChip('What products are in stock?')">Products 🛍️</button>
@@ -228,6 +251,28 @@
 @keyframes merasPulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+}
+
+.meras-head-messenger-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 4px 10px !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    font-size: 0.74rem !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    transition: background 0.15s ease, transform 0.15s ease !important;
+}
+
+.meras-head-messenger-btn:hover {
+    background: rgba(255, 255, 255, 0.35) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    text-decoration: none !important;
 }
 
 .meras-close-btn {
@@ -644,23 +689,29 @@ function merasAppendBot(reply, products, suggestions, handoff) {
     if (products && products.length) {
         html += '<div class="meras-prod-grid">';
         products.forEach(function(p) {
-            var tag = p.url ? 'a' : 'div';
-            var openTag = p.url
-                ? '<a class="meras-prod-card" href="' + merasEsc(p.url) + '" target="_blank" rel="noopener noreferrer">'
-                : '<div class="meras-prod-card">';
-            var closeTag = p.url ? '</a>' : '</div>';
             var unit = p.unit || 'pcs';
             var qtyText = (p.quantity > 0) ? (p.quantity + ' ' + unit + ' available') : 'Out of stock';
-            var viewArrow = p.url ? '<div class="meras-prod-view">View Item &rarr;</div>' : '';
-            html += openTag +
-                '<div class="meras-prod-name">' + merasEsc(p.name) + '</div>' +
-                '<div class="meras-prod-row">' +
-                '<span class="meras-prod-price">' + merasEsc(p.price) + '</span>' +
-                '<span class="meras-prod-stock">' + merasEsc(p.status) + '</span>' +
-                '</div>' +
-                '<div class="meras-prod-qty">' + merasEsc(qtyText) + '</div>' +
-                viewArrow +
-                closeTag;
+            if (p.url) {
+                // Navigate in same tab so #product-{id} hash routing works correctly
+                html += '<a class="meras-prod-card" href="' + merasEsc(p.url) + '">' +
+                    '<div class="meras-prod-name">' + merasEsc(p.name) + '</div>' +
+                    '<div class="meras-prod-row">' +
+                    '<span class="meras-prod-price">' + merasEsc(p.price) + '</span>' +
+                    '<span class="meras-prod-stock">' + merasEsc(p.status) + '</span>' +
+                    '</div>' +
+                    '<div class="meras-prod-qty">' + merasEsc(qtyText) + '</div>' +
+                    '<div class="meras-prod-view">View Item &rarr;</div>' +
+                    '</a>';
+            } else {
+                html += '<div class="meras-prod-card">' +
+                    '<div class="meras-prod-name">' + merasEsc(p.name) + '</div>' +
+                    '<div class="meras-prod-row">' +
+                    '<span class="meras-prod-price">' + merasEsc(p.price) + '</span>' +
+                    '<span class="meras-prod-stock">' + merasEsc(p.status) + '</span>' +
+                    '</div>' +
+                    '<div class="meras-prod-qty">' + merasEsc(qtyText) + '</div>' +
+                    '</div>';
+            }
         });
         html += '</div>';
     }

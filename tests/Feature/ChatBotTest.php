@@ -163,6 +163,21 @@ class ChatBotTest extends TestCase
     }
 
     /** @test */
+    public function customer_asking_about_messenger_immediately_receives_live_handoff()
+    {
+        $response = $this->postJson(route('chat.bot-response'), [
+            'message' => 'can I chat live on Messenger with an agent?'
+        ]);
+
+        $response->assertStatus(200);
+        $responseData = $response->json();
+        $this->assertTrue($responseData['success']);
+        $this->assertNotNull($responseData['handoff']);
+        $this->assertEquals('Chat live on Messenger', $responseData['handoff']['label']);
+        $this->assertStringContainsString('facebook.com', $responseData['handoff']['url']);
+    }
+
+    /** @test */
     public function customer_message_triggers_automated_bot_response()
     {
         $customer = User::create([

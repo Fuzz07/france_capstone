@@ -502,6 +502,22 @@
                             <div class="contact-value">Sunday - Friday, 8:00 AM – 6:00 PM</div>
                         </div>
                     </div>
+
+                    <!-- Live Messenger -->
+                    <div class="contact-item" style="background: rgba(79, 70, 229, 0.04); border-radius: 12px; padding: 12px; border: 1px solid rgba(79, 70, 229, 0.12);">
+                        <div class="contact-icon-wrapper" style="background: linear-gradient(135deg, #0084ff 0%, #a033ff 100%); color: #ffffff;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.19.16.15.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.99-.88c.17-.07.36-.09.53-.04 1.05.29 2.17.44 3.32.44 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm5.6 7.28-2.94 4.66c-.47.74-1.47.93-2.18.4l-2.34-1.75a.6.6 0 0 0-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.18-.4l2.34 1.75c.21.16.51.16.72 0l3.16-2.4c.42-.32.97.18.69.63z"/>
+                            </svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <div class="contact-label">Live Support</div>
+                            <div class="contact-value" style="margin-bottom: 6px;">Available directly on Messenger</div>
+                            <a href="{{ \App\Http\Controllers\ChatController::MESSENGER_URL }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background: linear-gradient(90deg, #0084ff 0%, #a033ff 100%); color: #fff; font-size: 0.8rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                                Chat live on Messenger &rarr;
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 @empty($hideStaffLinks)
@@ -783,6 +799,19 @@
                     document.querySelectorAll('.hero-section, #products, #inquire').forEach(el => {
                         if (el) el.style.display = '';
                     });
+                    // On desktop, if URL has a #product-{id} hash, scroll to + highlight that card
+                    const deskHash = window.location.hash || '';
+                    if (deskHash.startsWith('#product-')) {
+                        // Ensure grid view is shown (not DataTable) so the card is visible
+                        setCatalogView('grid');
+                        const targetEl = document.getElementById(deskHash.slice(1));
+                        if (targetEl) {
+                            setTimeout(() => {
+                                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                highlightProductCard(targetEl);
+                            }, 200);
+                        }
+                    }
                     return;
                 }
 
@@ -801,6 +830,22 @@
                 productsSec.style.display = 'none';
                 inquireSec.style.display = 'none';
 
+                // Handle #product-{id} deep-link from chatbot "View Item"
+                if (hash.startsWith('#product-')) {
+                    productsSec.style.display = 'block';
+                    updateBottomNavHighlight('#products');
+                    // Ensure grid view so the card element is visible (not DataTable mode)
+                    setCatalogView('grid');
+                    setTimeout(() => {
+                        const card = document.getElementById(hash.slice(1));
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            highlightProductCard(card);
+                        }
+                    }, 200);
+                    return;
+                }
+
                 if (hash === '#home') {
                     heroSec.style.display = 'block';
                     window.scrollTo(0, 0);
@@ -813,6 +858,18 @@
                 }
 
                 updateBottomNavHighlight(hash);
+            }
+
+            /** Briefly highlight a product card with a glowing ring so the user spots it instantly. */
+            function highlightProductCard(card) {
+                if (!card) return;
+                card.style.transition = 'box-shadow 0.3s ease, outline 0.3s ease';
+                card.style.outline = '3px solid #4f46e5';
+                card.style.boxShadow = '0 0 0 6px rgba(79,70,229,0.18), 0 8px 32px rgba(79,70,229,0.22)';
+                setTimeout(() => {
+                    card.style.outline = '';
+                    card.style.boxShadow = '';
+                }, 2200);
             }
 
             function updateBottomNavHighlight(activeHash) {
